@@ -1,0 +1,9 @@
+### Register coupon
+POST {{baseUrl}}/coupons
+Content-Type: application/json
+
+{
+  "code": "WINTER2026",
+  "maxUsagesAllowed": 100,
+  "countryCode": "PL"
+}

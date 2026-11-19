@@ -30,8 +30,17 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v5
 
+      - name: Check formatting
+        run: ./gradlew spotlessCheck
+
+      - name: Unit tests
+        run: ./gradlew test
+
+      - name: Integration tests
+        run: ./gradlew integrationTest
+
       - name: Build
-        run: ./gradlew build
+        run: ./gradlew assemble
 
       - name: Upload test reports
         if: failure()

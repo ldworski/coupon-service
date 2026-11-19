@@ -1,7 +1,11 @@
 package dev.ldworski.couponservice.adapter.out.persistence;
 
+import dev.ldworski.couponservice.domain.exception.CouponCodeAlreadyExistsException;
 import dev.ldworski.couponservice.domain.model.Coupon;
 import dev.ldworski.couponservice.domain.port.out.CouponRepositoryPort;
+import java.util.Optional;
+import org.hibernate.exception.ConstraintViolationException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -19,7 +23,24 @@ public class CouponJpaRepositoryAdapter implements CouponRepositoryPort {
     @Override
     public Coupon registerCoupon(Coupon coupon) {
         var couponEntity = couponPersistenceMapper.from(coupon);
-        var registeredCouponEntity = couponEntityJpaRepository.save(couponEntity);
-        return couponPersistenceMapper.from(registeredCouponEntity);
+        try {
+            var registeredCouponEntity = couponEntityJpaRepository.saveAndFlush(couponEntity);
+            return couponPersistenceMapper.from(registeredCouponEntity);
+        } catch (DataIntegrityViolationException exception) {
+            switch (exception.getCause()) {
+                case ConstraintViolationException violation
+                when isCouponCodeDuplicated(violation) ->
+                    throw new CouponCodeAlreadyExistsException(
+                            coupon.getCouponDefinition().code(), exception);
+                case null, default -> throw exception;
+            }
+        }
+    }
+
+    private boolean isCouponCodeDuplicated(ConstraintViolationException violation) {
+        return Optional.ofNullable(violation.getConstraintName())
+                        .map(value -> value.contains("coupon_code"))
+                        .orElse(Boolean.FALSE)
+                && violation.getKind() == ConstraintViolationException.ConstraintKind.UNIQUE;
     }
 }

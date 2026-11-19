@@ -4,13 +4,17 @@ import dev.ldworski.couponservice.domain.model.CountryCode;
 import jakarta.persistence.*;
 import java.time.Instant;
 import java.util.UUID;
+import org.springframework.data.domain.Persistable;
 
 @Entity
 @Table(name = "coupon")
-public class CouponEntity {
+public class CouponEntity implements Persistable<UUID> {
 
     @Id
     private UUID id;
+
+    @Transient
+    private boolean isNew = true;
 
     @Column(nullable = false, updatable = false)
     private String code;
@@ -40,8 +44,20 @@ public class CouponEntity {
         this.created = created;
     }
 
+    @Override
     public UUID getId() {
         return id;
+    }
+
+    @Override
+    public boolean isNew() {
+        return isNew;
+    }
+
+    @PostPersist
+    @PostLoad
+    void markNotNew() {
+        this.isNew = false;
     }
 
     public String getCode() {

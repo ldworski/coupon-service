@@ -5,6 +5,8 @@ import dev.ldworski.couponservice.adapter.in.web.dto.RegisterCouponResponse;
 import dev.ldworski.couponservice.domain.model.CouponCode;
 import dev.ldworski.couponservice.domain.model.CouponDefinition;
 import dev.ldworski.couponservice.domain.port.in.RegisterCouponUseCase;
+import jakarta.validation.Valid;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -13,7 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/coupons")
-public class CouponsController {
+public class CouponsController implements CouponsApi {
 
     private final RegisterCouponUseCase registerCouponUseCase;
 
@@ -21,8 +23,10 @@ public class CouponsController {
         this.registerCouponUseCase = registerCouponUseCase;
     }
 
-    @PostMapping
-    ResponseEntity<RegisterCouponResponse> registerCoupon(@RequestBody RegisterCouponRequest registerCouponRequest) {
+    @Override
+    @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<RegisterCouponResponse> registerCoupon(
+            @Valid @RequestBody RegisterCouponRequest registerCouponRequest) {
         var registerCouponCommand = new RegisterCouponUseCase.RegisterCouponCodeCommand(new CouponDefinition(
                 new CouponCode(registerCouponRequest.code()),
                 registerCouponRequest.maxUsagesAllowed(),

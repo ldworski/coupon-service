@@ -1,12 +1,11 @@
 package dev.ldworski.couponservice.domain.service;
 
+import static dev.ldworski.couponservice.domain.model.Coupon.newCoupon;
+
 import dev.ldworski.couponservice.domain.port.in.RegisterCouponUseCase;
 import dev.ldworski.couponservice.domain.port.out.CouponRepositoryPort;
-
 import java.time.Clock;
 import java.util.UUID;
-
-import static dev.ldworski.couponservice.domain.model.Coupon.newCoupon;
 
 public class RegisterCouponService implements RegisterCouponUseCase {
 
