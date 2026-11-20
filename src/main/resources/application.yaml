@@ -5,3 +5,24 @@ spring:
     url: ${DB_URL}
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+  cache:
+    cache-names: ip-countries
+    caffeine:
+      spec: maximumSize=1000000,expireAfterWrite=12h
+
+coupon-service:
+  free-ip-api:
+    base-url: https://free.freeipapi.com
+    connect-timeout: 5s
+    read-timeout: 5s
+    retry:
+      max-retries: 3
+      delay: 200ms
+      multiplier: 2
+      jitter: 100ms
+      max-delay: 2s
+

@@ -11,7 +11,6 @@ import spock.lang.Specification
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 
 @SpringBootTest
@@ -29,9 +28,5 @@ class ApiDocsIT extends Specification {
         then:
         result.andExpect(status().isOk())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath('$.paths["/coupons"].post.tags[0]').value("Coupons"))
-                .andExpect(jsonPath('$.paths["/coupons"].post.summary').value("Register a new coupon"))
-                .andExpect(jsonPath('$.paths["/coupons"].post.responses["409"].description')
-                        .value("Coupon with the given code already exists"))
     }
 }

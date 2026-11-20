@@ -7,6 +7,7 @@ import dev.ldworski.couponservice.domain.model.CouponCode
 import dev.ldworski.couponservice.domain.model.CouponDefinition
 import dev.ldworski.couponservice.domain.exception.CouponCodeAlreadyExistsException
 import jakarta.persistence.EntityManager
+import org.hibernate.exception.ConstraintViolationException
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest
 import org.springframework.context.annotation.Import
@@ -76,6 +77,31 @@ class CouponJpaRepositoryAdapterIT extends Specification {
         then:
         def exception = thrown(CouponCodeAlreadyExistsException)
         exception.code == new CouponCode(CODE)
+    }
+
+    def "should reject code with invalid format on database level when #description"() {
+        when:
+        entityManager.createNativeQuery("""
+                INSERT INTO coupon (id, code, current_usage, max_allowed_usage, country_code, created)
+                VALUES (:id, :code, 0, 100, 'PL', :created)
+                """)
+                .setParameter("id", UUID.randomUUID())
+                .setParameter("code", code)
+                .setParameter("created", CREATION_DATE)
+                .executeUpdate()
+
+        then:
+        def exception = thrown(ConstraintViolationException)
+        exception.message.contains("ck_coupon_code_format")
+
+        where:
+        description                | code
+        "code is empty"            | ""
+        "code is lower case"       | "winter2026"
+        "code contains whitespace" | "WINTER 2026"
+        "code contains new line"   | "WINTER\n2026"
+        "code contains dash"       | "WINTER-2026"
+        "code contains Polish letter" | "ZIMAŚ2026"
     }
 
     private static Coupon coupon(String code) {

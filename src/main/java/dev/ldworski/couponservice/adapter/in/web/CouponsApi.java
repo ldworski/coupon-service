@@ -16,10 +16,10 @@ interface CouponsApi {
 
     @Operation(summary = "Register a new coupon", description = """
         Registers a coupon with a unique code. \
-        The code is trimmed and converted to upper case.\
+        The code may contain only uppercase letters A-Z and digits.\
         """)
     @ApiResponse(
-            responseCode = "200",
+            responseCode = "201",
             description = "Coupon registered",
             content =
                     @Content(

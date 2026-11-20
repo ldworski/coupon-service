@@ -28,11 +28,11 @@ class RegisterCouponEndToEndIT extends Specification {
                 .uri("/coupons")
                 .contentType(MediaType.APPLICATION_JSON)
                 .accept(MediaType.APPLICATION_JSON)
-                .body('{"code": "e2e2026", "maxUsagesAllowed": 10, "countryCode": "PL"}')
+                .body('{"code": "E2E2026", "maxUsagesAllowed": 10, "countryCode": "PL"}')
                 .exchange()
 
         then:
-        response.expectStatus().isOk()
+        response.expectStatus().isCreated()
                 .expectBody()
                 .jsonPath('$.couponId').exists()
     }

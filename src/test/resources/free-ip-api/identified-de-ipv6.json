@@ -1,0 +1,30 @@
+{
+  "ipVersion": 6,
+  "ipAddress": "2a02:8108:0:0:0:0:0:1",
+  "latitude": 52.52,
+  "longitude": 13.405,
+  "countryName": "Germany",
+  "countryCode": "DE",
+  "capital": "Berlin",
+  "phoneCodes": [
+    49
+  ],
+  "timeZones": [
+    "Europe/Berlin"
+  ],
+  "zipCode": "10115",
+  "cityName": "Berlin",
+  "regionName": "Land Berlin",
+  "regionCode": "BE",
+  "continent": "Europe",
+  "continentCode": "EU",
+  "currencies": [
+    "EUR"
+  ],
+  "languages": [
+    "de"
+  ],
+  "asn": "64496",
+  "asnOrganization": "Example ISP",
+  "isProxy": false
+}

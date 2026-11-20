@@ -4,25 +4,15 @@ import spock.lang.Specification
 
 class CouponCodeSpec extends Specification {
 
-    def "should normalize '#rawValue' to '#expectedValue'"() {
+    def "should accept code '#value'"() {
         when:
-        def couponCode = new CouponCode(rawValue)
+        def couponCode = new CouponCode(value)
 
         then:
-        couponCode.value() == expectedValue
+        couponCode.value() == value
 
         where:
-        rawValue         || expectedValue
-        "WINTER2026"     || "WINTER2026"
-        "winter2026"     || "WINTER2026"
-        "Winter2026"     || "WINTER2026"
-        "  WINTER2026  " || "WINTER2026"
-        "\twinter2026\n" || "WINTER2026"
-    }
-
-    def "should treat codes differing only by case and surrounding whitespace as equal"() {
-        expect:
-        new CouponCode(" winter2026 ") == new CouponCode("WINTER2026")
+        value << ["WINTER2026", "2026", "A", "7", "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789", 'A' * CouponCode.MAX_LENGTH]
     }
 
     def "should reject null value"() {
@@ -34,18 +24,48 @@ class CouponCodeSpec extends Specification {
         exception.message == "value must not be null"
     }
 
-    def "should reject #description value"() {
+    def "should reject empty value"() {
+        when:
+        new CouponCode("")
+
+        then:
+        def exception = thrown(IllegalArgumentException)
+        exception.message == "value must not be blank"
+    }
+
+    def "should reject value longer than maximum length"() {
+        when:
+        new CouponCode('A' * (CouponCode.MAX_LENGTH + 1))
+
+        then:
+        def exception = thrown(IllegalArgumentException)
+        exception.message == "value must not be longer than 255 characters"
+    }
+
+    def "should reject value when #description"() {
         when:
         new CouponCode(value)
 
         then:
         def exception = thrown(IllegalArgumentException)
-        exception.message == "value must not be blank"
+        exception.message == "value must contain only uppercase letters A-Z or digits"
 
         where:
-        description       | value
-        "empty"           | ""
-        "whitespace-only" | "   "
-        "tabs-and-lines"  | "\t\n"
+        description                       | value
+        "it is lower case"                | "winter2026"
+        "it is mixed case"                | "Winter2026"
+        "it is whitespace only"           | "   "
+        "it has leading whitespace"       | " WINTER2026"
+        "it has trailing whitespace"      | "WINTER2026 "
+        "it contains inner whitespace"    | "WINTER 2026"
+        "it contains tab"                 | "WINTER\t2026"
+        "it contains new line"            | "WINTER\n2026"
+        "it contains non-breaking space"  | "WINTER 2026"
+        "it contains dash"                | "WINTER-2026"
+        "it contains underscore"          | "WINTER_2026"
+        "it contains hash"                | "WINTER#2026"
+        "it contains Polish letter"       | "ZIMAŚ2026"
+        "it contains Cyrillic look-alike" | "ZIMА2026"
+        "it contains non-ASCII digit"     | "ZIMA٢٠٢٦"
     }
 }

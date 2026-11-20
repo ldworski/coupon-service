@@ -1,0 +1,30 @@
+{
+  "ipVersion": 4,
+  "ipAddress": "83.0.0.1",
+  "latitude": 52.2297,
+  "longitude": 21.0122,
+  "countryName": "Poland",
+  "countryCode": "PL",
+  "capital": "Warsaw",
+  "phoneCodes": [
+    48
+  ],
+  "timeZones": [
+    "Europe/Warsaw"
+  ],
+  "zipCode": "00-001",
+  "cityName": "Warsaw",
+  "regionName": "Mazovia",
+  "regionCode": "14",
+  "continent": "Europe",
+  "continentCode": "EU",
+  "currencies": [
+    "PLN"
+  ],
+  "languages": [
+    "pl"
+  ],
+  "asn": "64496",
+  "asnOrganization": "Example ISP",
+  "isProxy": false
+}

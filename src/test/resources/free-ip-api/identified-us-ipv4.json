@@ -1,0 +1,30 @@
+{
+  "ipVersion": 4,
+  "ipAddress": "8.8.8.8",
+  "latitude": 37.422,
+  "longitude": -122.085,
+  "countryName": "United States",
+  "countryCode": "US",
+  "capital": "Washington D.C.",
+  "phoneCodes": [
+    1
+  ],
+  "timeZones": [
+    "America/New_York"
+  ],
+  "zipCode": "94043",
+  "cityName": "Mountain View",
+  "regionName": "California",
+  "regionCode": "CA",
+  "continent": "Americas",
+  "continentCode": "NA",
+  "currencies": [
+    "USD"
+  ],
+  "languages": [
+    "en"
+  ],
+  "asn": "64496",
+  "asnOrganization": "Example ISP",
+  "isProxy": false
+}

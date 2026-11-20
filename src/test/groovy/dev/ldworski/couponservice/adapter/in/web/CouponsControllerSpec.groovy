@@ -40,7 +40,7 @@ class CouponsControllerSpec extends Specification {
         def result = mockMvc.perform(post("/coupons")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
-                    {"code": " winter2026 ",
+                    {"code": "WINTER2026",
                      "maxUsagesAllowed": ${MAX_ALLOWED_USAGES},
                      "countryCode": "${COUNTRY_CODE.name()}"}
                      """))
@@ -50,7 +50,7 @@ class CouponsControllerSpec extends Specification {
                 new CouponDefinition(new CouponCode("WINTER2026"), MAX_ALLOWED_USAGES, COUNTRY_CODE))) >> COUPON_ID
 
         and:
-        result.andExpect(status().isOk())
+        result.andExpect(status().isCreated())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath('$.couponId').value(COUPON_ID.toString()))
     }
@@ -78,6 +78,30 @@ class CouponsControllerSpec extends Specification {
         "code is missing"                    | '{"maxUsagesAllowed": 100, "countryCode": "PL"}'                         || "code"
         "code is blank"                      | '{"code": "   ", "maxUsagesAllowed": 100, "countryCode": "PL"}'          || "code"
         "code is too long"                   | """{"code": "${'A' * 256}", "maxUsagesAllowed": 100, "countryCode": "PL"}""" || "code"
+        "code contains at sign"              | '{"code": "WINTER@2026", "maxUsagesAllowed": 100, "countryCode": "PL"}'  || "code"
+        "code contains dot"                  | '{"code": "WINTER.2026", "maxUsagesAllowed": 100, "countryCode": "PL"}'  || "code"
+        "code contains inner whitespace"     | '{"code": "WINTER 2026", "maxUsagesAllowed": 100, "countryCode": "PL"}'  || "code"
+        "code has leading whitespace"        | '{"code": " WINTER2026", "maxUsagesAllowed": 100, "countryCode": "PL"}'  || "code"
+        "code has trailing whitespace"       | '{"code": "WINTER2026 ", "maxUsagesAllowed": 100, "countryCode": "PL"}'  || "code"
+        "code has surrounding tabs"          | '{"code": "\\tWINTER2026\\n", "maxUsagesAllowed": 100, "countryCode": "PL"}' || "code"
+        "code contains inner tab"            | '{"code": "WINTER\\t2026", "maxUsagesAllowed": 100, "countryCode": "PL"}' || "code"
+        "code contains inner new line"       | '{"code": "WINTER\\n2026", "maxUsagesAllowed": 100, "countryCode": "PL"}' || "code"
+        "code contains carriage return"      | '{"code": "WINTER\\r\\n2026", "maxUsagesAllowed": 100, "countryCode": "PL"}' || "code"
+        "code contains non-breaking space"   | '{"code": "WINTER\\u00A02026", "maxUsagesAllowed": 100, "countryCode": "PL"}' || "code"
+        "code contains em space"             | '{"code": "WINTER\\u20032026", "maxUsagesAllowed": 100, "countryCode": "PL"}' || "code"
+        "code contains dash"                 | '{"code": "WINTER-2026", "maxUsagesAllowed": 100, "countryCode": "PL"}'  || "code"
+        "code contains underscore"           | '{"code": "WINTER_2026", "maxUsagesAllowed": 100, "countryCode": "PL"}'  || "code"
+        "code contains hash"                 | '{"code": "WINTER#2026", "maxUsagesAllowed": 100, "countryCode": "PL"}'  || "code"
+        "code contains Cyrillic letters"     | '{"code": "ЗИМА2026", "maxUsagesAllowed": 100, "countryCode": "PL"}'     || "code"
+        "code contains Cyrillic look-alike"  | '{"code": "ZIMА2026", "maxUsagesAllowed": 100, "countryCode": "PL"}'     || "code"
+        "code contains Greek letters"        | '{"code": "ΩMEGA2026", "maxUsagesAllowed": 100, "countryCode": "PL"}'    || "code"
+        "code is lower case"                 | '{"code": "winter2026", "maxUsagesAllowed": 100, "countryCode": "PL"}'   || "code"
+        "code is mixed case"                 | '{"code": "Winter2026", "maxUsagesAllowed": 100, "countryCode": "PL"}'   || "code"
+        "code contains lower case Polish letter" | '{"code": "ZIMAś2026", "maxUsagesAllowed": 100, "countryCode": "PL"}' || "code"
+        "code contains Polish letter"        | '{"code": "ZIMAŚ2026", "maxUsagesAllowed": 100, "countryCode": "PL"}'    || "code"
+        "code contains Latin letter with diacritic" | '{"code": "ŽLUTÝ", "maxUsagesAllowed": 100, "countryCode": "PL"}' || "code"
+        "code contains sharp s"              | '{"code": "STRAßE", "maxUsagesAllowed": 100, "countryCode": "PL"}'       || "code"
+        "code contains non-ASCII digit"      | '{"code": "ZIMA٢٠٢٦", "maxUsagesAllowed": 100, "countryCode": "PL"}'     || "code"
         "max usages allowed is zero"         | '{"code": "WINTER2026", "maxUsagesAllowed": 0, "countryCode": "PL"}'     || "maxUsagesAllowed"
         "country code is missing"            | '{"code": "WINTER2026", "maxUsagesAllowed": 100}'                        || "countryCode"
         "max usages allowed is missing"      | '{"code": "WINTER2026", "countryCode": "PL"}'                            || "maxUsagesAllowed"
@@ -98,10 +122,45 @@ class CouponsControllerSpec extends Specification {
         1 * registerCouponUseCase.registerCoupon({ it.couponDefinition().code() == new CouponCode(code) }) >> COUPON_ID
 
         and:
-        result.andExpect(status().isOk())
+        result.andExpect(status().isCreated())
     }
 
-    def "should list allowed values when country code is unknown"() {
+    def "should accept code '#code' with allowed characters"() {
+        when:
+        def result = mockMvc.perform(post("/coupons")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""{"code": "${code}", "maxUsagesAllowed": 100, "countryCode": "PL"}"""))
+
+        then:
+        1 * registerCouponUseCase.registerCoupon({ it.couponDefinition().code() == new CouponCode(code) }) >> COUPON_ID
+
+        and:
+        result.andExpect(status().isCreated())
+
+        where:
+        code << ["WINTER2026", "2026WINTER", "A", "7", "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"]
+    }
+
+    def "should report single readable error when code is '#code'"() {
+        when:
+        def result = mockMvc.perform(post("/coupons")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""{"code": "${code}", "maxUsagesAllowed": 100, "countryCode": "PL"}"""))
+
+        then:
+        0 * registerCouponUseCase._
+
+        and:
+        result.andExpect(status().isBadRequest())
+                .andExpect(jsonPath('$.errors', hasSize(1)))
+                .andExpect(jsonPath('$.errors[0].field').value("code"))
+                .andExpect(jsonPath('$.errors[0].message').value("must contain only uppercase letters A-Z or digits"))
+
+        where:
+        code << ["WINTER\$2026", "WINTER 2026", "Winter2026", "ZIMAŚ2026", "ЗИМА2026"]
+    }
+
+    def "should report unrecognized value when country code is unknown"() {
         when:
         def result = mockMvc.perform(post("/coupons")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -148,8 +207,8 @@ class CouponsControllerSpec extends Specification {
         where:
         description                    | request                                                                                                                                                                    || expectedStatus
         "http method is not supported" | delete("/coupons")                                                                                                                                                         || 405
-        "media type is not supported"  | post("/coupons").contentType(MediaType.TEXT_PLAIN).content("x")                                                                                                            || 415
-        "media type is not supported"  | post("/coupons").contentType(MediaType.APPLICATION_JSON).accept(MediaType.APPLICATION_XML).content('{"code": "WINTER2026", "maxUsagesAllowed": 100, "countryCode": "PL"}') || 406
+        "content type is not supported"  | post("/coupons").contentType(MediaType.TEXT_PLAIN).content("x")                                                                                                            || 415
+        "requested response type is not acceptable"  | post("/coupons").contentType(MediaType.APPLICATION_JSON).accept(MediaType.APPLICATION_XML).content('{"code": "WINTER2026", "maxUsagesAllowed": 100, "countryCode": "PL"}') || 406
     }
 
     def "should return conflict when coupon code already exists"() {
@@ -161,7 +220,7 @@ class CouponsControllerSpec extends Specification {
         when:
         def result = mockMvc.perform(post("/coupons")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content('{"code": "winter2026", "maxUsagesAllowed": 100, "countryCode": "PL"}'))
+                .content('{"code": "WINTER2026", "maxUsagesAllowed": 100, "countryCode": "PL"}'))
 
         then:
         result.andExpect(status().isConflict())
@@ -180,7 +239,7 @@ class CouponsControllerSpec extends Specification {
         when:
         def result = mockMvc.perform(post("/coupons")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content('{"code": "winter2026", "maxUsagesAllowed": 100, "countryCode": "PL"}'))
+                .content('{"code": "WINTER2026", "maxUsagesAllowed": 100, "countryCode": "PL"}'))
 
         then:
         result.andExpect(status().isInternalServerError())
