@@ -3,6 +3,7 @@ package dev.ldworski.couponservice.adapter.out.persistence;
 import dev.ldworski.couponservice.domain.model.Coupon;
 import dev.ldworski.couponservice.domain.model.CouponCode;
 import dev.ldworski.couponservice.domain.model.CouponDefinition;
+import dev.ldworski.couponservice.domain.model.CouponId;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -10,7 +11,7 @@ public class CouponPersistenceMapper {
 
     public Coupon from(CouponEntity couponEntity) {
         return new Coupon(
-                couponEntity.getId(),
+                new CouponId(couponEntity.getId()),
                 new CouponDefinition(
                         new CouponCode(couponEntity.getCode()),
                         couponEntity.getMaxAllowedUsage(),
@@ -21,7 +22,7 @@ public class CouponPersistenceMapper {
 
     public CouponEntity from(Coupon coupon) {
         return new CouponEntity(
-                coupon.getId(),
+                coupon.getId().value(),
                 coupon.getCouponDefinition().code().value(),
                 coupon.getCouponDefinition().maxAllowedUsage(),
                 coupon.getCurrentUsages(),

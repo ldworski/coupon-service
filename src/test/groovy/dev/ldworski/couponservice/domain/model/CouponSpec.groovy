@@ -6,7 +6,7 @@ import java.time.Instant
 
 class CouponSpec extends Specification {
 
-    private static final UUID ID = UUID.fromString("0f8fad5b-d9cb-469f-a165-70867728950e")
+    private static final CouponId ID = new CouponId(UUID.fromString("0f8fad5b-d9cb-469f-a165-70867728950e"))
     private static final Instant NOW = Instant.parse("2026-11-19T18:15:30Z")
     private static final CouponDefinition COUPON_DEFINITION =
             new CouponDefinition(new CouponCode("WINTER2026"), 100, CountryCode.PL)

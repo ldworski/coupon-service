@@ -59,7 +59,7 @@ class CouponJpaRepositoryAdapterIT extends Specification {
         entityManager.clear()
 
         then:
-        def stored = couponEntityJpaRepository.findById(coupon.id).orElseThrow()
+        def stored = couponEntityJpaRepository.findById(coupon.id.value()).orElseThrow()
         stored.code == CODE
         stored.maxAllowedUsage == MAX_ALLOWED_USAGE
         stored.currentUsage == 0

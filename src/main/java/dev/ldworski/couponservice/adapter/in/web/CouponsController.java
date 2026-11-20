@@ -33,6 +33,6 @@ public class CouponsController implements CouponsApi {
                 registerCouponRequest.maxUsagesAllowed(),
                 registerCouponRequest.countryCode()));
         var registerCouponId = registerCouponUseCase.registerCoupon(registerCouponCommand);
-        return ResponseEntity.status(HttpStatus.CREATED).body(new RegisterCouponResponse(registerCouponId));
+        return ResponseEntity.status(HttpStatus.CREATED).body(new RegisterCouponResponse(registerCouponId.value()));
     }
 }

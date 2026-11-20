@@ -4,6 +4,7 @@ import dev.ldworski.couponservice.domain.model.CountryCode
 import dev.ldworski.couponservice.domain.model.Coupon
 import dev.ldworski.couponservice.domain.model.CouponCode
 import dev.ldworski.couponservice.domain.model.CouponDefinition
+import dev.ldworski.couponservice.domain.model.CouponId
 import dev.ldworski.couponservice.domain.port.in.RegisterCouponUseCase.RegisterCouponCodeCommand
 import dev.ldworski.couponservice.domain.port.out.CouponRepositoryPort
 import spock.lang.Specification
@@ -29,7 +30,7 @@ class RegisterCouponServiceSpec extends Specification {
 
     def "should register new coupon with given definition and current time"() {
         when:
-        UUID couponId = service.registerCoupon(new RegisterCouponCodeCommand(COUPON_DEFINITION))
+        CouponId couponId = service.registerCoupon(new RegisterCouponCodeCommand(COUPON_DEFINITION))
 
         then:
         couponId != null
@@ -44,7 +45,7 @@ class RegisterCouponServiceSpec extends Specification {
 
     def "should return id of registered coupon"() {
         given:
-        def registeredCoupon = new Coupon(UUID.randomUUID(), COUPON_DEFINITION, 0, NOW)
+        def registeredCoupon = new Coupon(CouponId.newCouponId(), COUPON_DEFINITION, 0, NOW)
         couponRepositoryPort.registerCoupon(_ as Coupon) >> registeredCoupon
 
         when:

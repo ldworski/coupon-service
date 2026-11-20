@@ -1,11 +1,11 @@
 package dev.ldworski.couponservice.domain.port.in;
 
 import dev.ldworski.couponservice.domain.model.CouponDefinition;
-import java.util.UUID;
+import dev.ldworski.couponservice.domain.model.CouponId;
 
 public interface RegisterCouponUseCase {
 
-    UUID registerCoupon(RegisterCouponCodeCommand command);
+    CouponId registerCoupon(RegisterCouponCodeCommand command);
 
     record RegisterCouponCodeCommand(CouponDefinition couponDefinition) {}
 }

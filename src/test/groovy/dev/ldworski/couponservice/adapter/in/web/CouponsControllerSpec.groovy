@@ -4,6 +4,7 @@ import dev.ldworski.couponservice.domain.exception.CouponCodeAlreadyExistsExcept
 import dev.ldworski.couponservice.domain.model.CountryCode
 import dev.ldworski.couponservice.domain.model.CouponCode
 import dev.ldworski.couponservice.domain.model.CouponDefinition
+import dev.ldworski.couponservice.domain.model.CouponId
 import dev.ldworski.couponservice.domain.port.in.RegisterCouponUseCase
 import dev.ldworski.couponservice.domain.port.in.RegisterCouponUseCase.RegisterCouponCodeCommand
 import org.spockframework.spring.SpringBean
@@ -25,7 +26,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebMvcTest(CouponsController)
 class CouponsControllerSpec extends Specification {
 
-    private static final UUID COUPON_ID = UUID.fromString("0f8fad5b-d9cb-469f-a165-70867728950e")
+    private static final CouponId COUPON_ID = new CouponId(UUID.fromString("0f8fad5b-d9cb-469f-a165-70867728950e"))
     private static final int MAX_ALLOWED_USAGES = 100
     private static final CountryCode COUNTRY_CODE = CountryCode.PL
 
@@ -52,7 +53,7 @@ class CouponsControllerSpec extends Specification {
         and:
         result.andExpect(status().isCreated())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath('$.couponId').value(COUPON_ID.toString()))
+                .andExpect(jsonPath('$.couponId').value(COUPON_ID.value().toString()))
     }
 
     def "should reject request when #description"() {

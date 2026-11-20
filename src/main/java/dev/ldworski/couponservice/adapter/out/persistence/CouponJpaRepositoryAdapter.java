@@ -3,7 +3,6 @@ package dev.ldworski.couponservice.adapter.out.persistence;
 import dev.ldworski.couponservice.domain.exception.CouponCodeAlreadyExistsException;
 import dev.ldworski.couponservice.domain.model.Coupon;
 import dev.ldworski.couponservice.domain.port.out.CouponRepositoryPort;
-import java.util.Optional;
 import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Component;
@@ -38,9 +37,6 @@ public class CouponJpaRepositoryAdapter implements CouponRepositoryPort {
     }
 
     private boolean isCouponCodeDuplicated(ConstraintViolationException violation) {
-        return Optional.ofNullable(violation.getConstraintName())
-                        .map(value -> value.contains("coupon_code"))
-                        .orElse(Boolean.FALSE)
-                && violation.getKind() == ConstraintViolationException.ConstraintKind.UNIQUE;
+        return "uq_coupon_code".equals(violation.getConstraintName());
     }
 }
