@@ -3,15 +3,12 @@ package dev.ldworski.couponservice.adapter.out.persistence;
 import dev.ldworski.couponservice.domain.exception.CouponAlreadyRedeemedException;
 import dev.ldworski.couponservice.domain.model.CouponRedemption;
 import dev.ldworski.couponservice.domain.port.out.CouponRedemptionRepositoryPort;
-import java.util.Optional;
 import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Component;
 
 @Component
 public class CouponRedemptionJpaRepositoryAdapter implements CouponRedemptionRepositoryPort {
-
-    private static final String PRIMARY_KEY_CONSTRAINT = "pk_coupon_redemption";
 
     private final CouponRedemptionEntityJpaRepository couponRedemptionEntityJpaRepository;
     private final CouponRedemptionPersistenceMapper couponRedemptionPersistenceMapper;
@@ -40,9 +37,6 @@ public class CouponRedemptionJpaRepositoryAdapter implements CouponRedemptionRep
     }
 
     private boolean isAlreadyRedeemed(ConstraintViolationException violation) {
-        return Optional.ofNullable(violation.getConstraintName())
-                        .map(value -> value.contains(PRIMARY_KEY_CONSTRAINT))
-                        .orElse(Boolean.FALSE)
-                && violation.getKind() == ConstraintViolationException.ConstraintKind.UNIQUE;
+        return "pk_coupon_redemption".equals(violation.getConstraintName());
     }
 }

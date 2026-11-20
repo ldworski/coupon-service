@@ -1,7 +1,9 @@
 package dev.ldworski.couponservice.configuration;
 
+import dev.ldworski.couponservice.domain.port.in.RedeemCouponUseCase;
 import dev.ldworski.couponservice.domain.port.in.RegisterCouponUseCase;
 import dev.ldworski.couponservice.domain.port.out.CouponRepositoryPort;
+import dev.ldworski.couponservice.domain.service.RedeemCouponService;
 import dev.ldworski.couponservice.domain.service.RegisterCouponService;
 import java.time.Clock;
 import org.springframework.context.annotation.Bean;
@@ -18,5 +20,10 @@ public class DomainConfiguration {
     @Bean
     RegisterCouponUseCase registerCouponUseCase(CouponRepositoryPort couponRepositoryPort, Clock clock) {
         return new RegisterCouponService(couponRepositoryPort, clock);
+    }
+
+    @Bean
+    RedeemCouponUseCase redeemCouponUseCase(){
+        return new RedeemCouponService();
     }
 }

@@ -1,8 +1,11 @@
 package dev.ldworski.couponservice.adapter.out.persistence;
 
 import dev.ldworski.couponservice.domain.exception.CouponCodeAlreadyExistsException;
+import dev.ldworski.couponservice.domain.model.CountryCode;
 import dev.ldworski.couponservice.domain.model.Coupon;
+import dev.ldworski.couponservice.domain.model.CouponCode;
 import dev.ldworski.couponservice.domain.port.out.CouponRepositoryPort;
+import java.util.Optional;
 import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Component;
@@ -34,6 +37,13 @@ public class CouponJpaRepositoryAdapter implements CouponRepositoryPort {
                 case null, default -> throw exception;
             }
         }
+    }
+
+    @Override
+    public Optional<Coupon> findByCodeAndCountryCode(CouponCode code, CountryCode countryCode) {
+        return couponEntityJpaRepository
+                .findByCodeAndCountryCode(code.value(), countryCode)
+                .map(couponPersistenceMapper::from);
     }
 
     private boolean isCouponCodeDuplicated(ConstraintViolationException violation) {

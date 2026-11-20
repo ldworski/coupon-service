@@ -79,6 +79,37 @@ class CouponJpaRepositoryAdapterIT extends Specification {
         exception.code == new CouponCode(CODE)
     }
 
+    def "should find coupon by code and country code"() {
+        given:
+        def coupon = adapter.registerCoupon(coupon(CODE))
+        entityManager.clear()
+
+        when:
+        def found = adapter.findByCodeAndCountryCode(new CouponCode(CODE), COUNTRY_CODE)
+
+        then:
+        found.isPresent()
+        with(found.get()) {
+            id == coupon.id
+            couponDefinition == coupon.couponDefinition
+            currentUsages == 0
+            creationDate == CREATION_DATE
+        }
+    }
+
+    def "should not find coupon when #description"() {
+        given:
+        adapter.registerCoupon(coupon(CODE))
+
+        expect:
+        adapter.findByCodeAndCountryCode(new CouponCode(code), countryCode).isEmpty()
+
+        where:
+        description                          | code         | countryCode
+        "code does not exist"                | "SUMMER2026" | COUNTRY_CODE
+        "coupon is defined for other country" | CODE         | CountryCode.DE
+    }
+
     def "should reject code with invalid format on database level when #description"() {
         when:
         entityManager.createNativeQuery("""
