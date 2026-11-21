@@ -35,9 +35,7 @@ public class CountryIdentificationAdapter implements CountryIdentificationPort {
                 .retrieve()
                 .body(FreeIpApiResponse.class));
 
-        return Optional.ofNullable(response)
-                .map(FreeIpApiResponse::countryCode)
-                .flatMap(this::toCountryCode);
+        return Optional.ofNullable(response).map(FreeIpApiResponse::countryCode).flatMap(this::toCountryCode);
     }
 
     private FreeIpApiResponse withRetries(Retryable<FreeIpApiResponse> call) {

@@ -9,14 +9,17 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.validation.method.ParameterErrors;
 import org.springframework.web.ErrorResponse;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import tools.jackson.databind.exc.InvalidFormatException;
 import tools.jackson.databind.exc.MismatchedInputException;
 
 @RestControllerAdvice
+//TODO przemyśleć walidacje i ich obsługę
 class RestExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(RestExceptionHandler.class);
@@ -25,6 +28,18 @@ class RestExceptionHandler {
     ProblemDetail handleValidationException(MethodArgumentNotValidException exception) {
         return validationProblemDetail(exception.getBindingResult().getFieldErrors().stream()
                 .map(error -> new FieldValidationError(error.getField(), error.getDefaultMessage()))
+                .toList());
+    }
+
+    @ExceptionHandler(HandlerMethodValidationException.class)
+    ProblemDetail handleHandlerMethodValidation(HandlerMethodValidationException exception) {
+        return validationProblemDetail(exception.getParameterValidationResults().stream()
+                .flatMap(result -> result instanceof ParameterErrors parameterErrors
+                        ? parameterErrors.getFieldErrors().stream()
+                                .map(error -> new FieldValidationError(error.getField(), error.getDefaultMessage()))
+                        : result.getResolvableErrors().stream()
+                                .map(error -> new FieldValidationError(
+                                        result.getMethodParameter().getParameterName(), error.getDefaultMessage())))
                 .toList());
     }
 

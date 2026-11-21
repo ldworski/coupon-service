@@ -24,7 +24,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 
 @WebMvcTest(CouponsController)
-class CouponsControllerSpec extends Specification {
+class CouponsControllerIT extends Specification {
 
     private static final CouponId COUPON_ID = new CouponId(UUID.fromString("0f8fad5b-d9cb-469f-a165-70867728950e"))
     private static final int MAX_ALLOWED_USAGES = 100

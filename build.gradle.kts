@@ -4,10 +4,17 @@ import org.gradle.api.tasks.testing.logging.TestLogEvent
 plugins {
     java
     groovy
-    id("org.springframework.boot") version "4.1.2"
-    id("io.spring.dependency-management") version "1.1.7"
-    id("com.diffplug.spotless") version "8.11.0"
+    jacoco
+    id("org.springframework.boot")
+    id("io.spring.dependency-management")
+    id("com.diffplug.spotless")
 }
+
+val springdocVersion = providers.gradleProperty("springdocVersion").get()
+val wiremockVersion = providers.gradleProperty("wiremockVersion").get()
+val spockVersion = providers.gradleProperty("spockVersion").get()
+val jacocoVersion = providers.gradleProperty("jacocoVersion").get()
+val palantirJavaFormatVersion = providers.gradleProperty("palantirJavaFormatVersion").get()
 
 group = "dev.ldworski"
 version = "0.0.1-SNAPSHOT"
@@ -24,7 +31,7 @@ repositories {
 }
 
 dependencies {
-    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:3.2.0")
+    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:$springdocVersion")
     implementation("org.springframework.boot:spring-boot-starter")
     implementation("org.springframework.boot:spring-boot-starter-webmvc")
     implementation("org.springframework.boot:spring-boot-starter-validation")
@@ -39,9 +46,9 @@ dependencies {
     testImplementation("org.springframework.boot:spring-boot-starter-webmvc-test")
     testImplementation("org.springframework.boot:spring-boot-testcontainers")
     testImplementation("org.testcontainers:testcontainers-postgresql")
-    testImplementation("org.wiremock:wiremock-standalone:3.13.2")
-    testImplementation("org.spockframework:spock-core:2.5-groovy-5.0")
-    testImplementation("org.spockframework:spock-spring:2.5-groovy-5.0")
+    testImplementation("org.wiremock:wiremock-standalone:$wiremockVersion")
+    testImplementation("org.spockframework:spock-core:$spockVersion")
+    testImplementation("org.spockframework:spock-spring:$spockVersion")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
@@ -86,10 +93,24 @@ tasks.check {
     dependsOn(integrationTest)
 }
 
+jacoco {
+    toolVersion = jacocoVersion
+}
+
+tasks.jacocoTestReport {
+    description = "Generates code coverage report from unit and integration tests."
+    dependsOn(tasks.test, integrationTest)
+    executionData.setFrom(fileTree(layout.buildDirectory).include("jacoco/*.exec"))
+    reports {
+        html.required = true
+        xml.required = true
+    }
+}
+
 spotless {
     java {
         target("src/*/java/**/*.java")
-        palantirJavaFormat("2.103.0")
+        palantirJavaFormat(palantirJavaFormatVersion)
         removeUnusedImports()
         trimTrailingWhitespace()
         endWithNewline()
