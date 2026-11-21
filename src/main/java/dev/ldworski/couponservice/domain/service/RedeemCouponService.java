@@ -1,6 +1,6 @@
 package dev.ldworski.couponservice.domain.service;
 
-import dev.ldworski.couponservice.domain.exception.CouponNotAvailableInCountryException;
+import dev.ldworski.couponservice.domain.exception.CouponNotAvailableInLocationException;
 import dev.ldworski.couponservice.domain.exception.CouponNotFoundException;
 import dev.ldworski.couponservice.domain.model.CouponRedemption;
 import dev.ldworski.couponservice.domain.port.in.RedeemCouponUseCase;
@@ -33,17 +33,24 @@ public class RedeemCouponService implements RedeemCouponUseCase {
 
     @Override
     public void redeemCoupon(RedeemCouponCommand command) {
-        var countryCode = countryIdentificationPort.identifyCountry(command.ipAddress());
+        var countryCode = countryIdentificationPort
+                .identifyCountry(command.ipAddress())
+                .orElseThrow(() -> new CouponNotAvailableInLocationException(command.code()));
+        var coupon = couponRepositoryPort
+                .findByCode(command.code())
+                .orElseThrow(() -> new CouponNotFoundException(command.code()));
+        coupon.validateForRedemption(countryCode);
+        tryToRedeemCoupon(command);
+    }
+
+    private void tryToRedeemCoupon(RedeemCouponCommand command) {
         transactionPort.inTransaction(() -> {
-            var coupon = couponRepositoryPort
+            var lockedCoupon = couponRepositoryPort
                     .findByCodeForUpdate(command.code())
                     .orElseThrow(() -> new CouponNotFoundException(command.code()));
-            if (countryCode.isEmpty() || !coupon.isAvailableIn(countryCode.get())) {
-                throw new CouponNotAvailableInCountryException(command.code());
-            }
+            couponRepositoryPort.updateUsage(lockedCoupon.tryToRedeem());
             couponRedemptionRepositoryPort.registerRedemption(
-                    new CouponRedemption(coupon.getId(), command.userId(), clock.instant()));
-            couponRepositoryPort.updateUsage(coupon.redeem());
+                    new CouponRedemption(lockedCoupon.getId(), command.userId(), clock.instant()));
         });
     }
 }

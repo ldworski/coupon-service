@@ -2,7 +2,7 @@ package dev.ldworski.couponservice.adapter.in.web;
 
 import dev.ldworski.couponservice.domain.exception.CouponAlreadyRedeemedException;
 import dev.ldworski.couponservice.domain.exception.CouponCodeAlreadyExistsException;
-import dev.ldworski.couponservice.domain.exception.CouponNotAvailableInCountryException;
+import dev.ldworski.couponservice.domain.exception.CouponNotAvailableInLocationException;
 import dev.ldworski.couponservice.domain.exception.CouponNotFoundException;
 import dev.ldworski.couponservice.domain.exception.CouponUsageLimitReachedException;
 import java.util.List;
@@ -74,8 +74,8 @@ class RestExceptionHandler {
         return problemDetail;
     }
 
-    @ExceptionHandler(CouponNotAvailableInCountryException.class)
-    ProblemDetail handleCouponNotAvailableInCountry(CouponNotAvailableInCountryException exception) {
+    @ExceptionHandler(CouponNotAvailableInLocationException.class)
+    ProblemDetail handleCouponNotAvailableInCountry(CouponNotAvailableInLocationException exception) {
         var problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, exception.getMessage());
         problemDetail.setTitle("Coupon not available in country");
         problemDetail.setProperty("code", exception.getCode().value());
@@ -84,8 +84,8 @@ class RestExceptionHandler {
 
     @ExceptionHandler(CouponAlreadyRedeemedException.class)
     ProblemDetail handleCouponAlreadyRedeemed(CouponAlreadyRedeemedException exception) {
-        var problemDetail = ProblemDetail.forStatusAndDetail(
-                HttpStatus.CONFLICT, "Coupon has already been redeemed by this user");
+        var problemDetail =
+                ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, "Coupon has already been redeemed by this user");
         problemDetail.setTitle("Coupon already redeemed");
         return problemDetail;
     }

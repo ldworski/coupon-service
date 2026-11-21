@@ -47,10 +47,13 @@ public class CouponJpaRepositoryAdapter implements CouponRepositoryPort {
     }
 
     @Override
+    public Optional<Coupon> findByCode(CouponCode code) {
+        return couponEntityJpaRepository.findByCode(code.value()).map(couponPersistenceMapper::from);
+    }
+
+    @Override
     public Optional<Coupon> findByCodeForUpdate(CouponCode code) {
-        return couponEntityJpaRepository
-                .findWithLockByCode(code.value())
-                .map(couponPersistenceMapper::from);
+        return couponEntityJpaRepository.findWithLockByCode(code.value()).map(couponPersistenceMapper::from);
     }
 
     @Override

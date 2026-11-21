@@ -92,7 +92,7 @@ class RedeemCouponEndToEndIT extends Specification {
         redemptionCount("E2EREDEEMTWICE") == 1
     }
 
-    def "should roll back redemption when coupon usage limit is reached"() {
+    def "should reject redemption when coupon usage limit is reached"() {
         given:
         registerCoupon("E2EREDEEMLIMIT", 1)
         redeemCoupon("E2EREDEEMLIMIT", UUID.randomUUID()).expectStatus().isCreated()

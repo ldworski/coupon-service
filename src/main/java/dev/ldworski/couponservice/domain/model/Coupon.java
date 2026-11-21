@@ -1,5 +1,6 @@
 package dev.ldworski.couponservice.domain.model;
 
+import dev.ldworski.couponservice.domain.exception.CouponNotAvailableInLocationException;
 import dev.ldworski.couponservice.domain.exception.CouponUsageLimitReachedException;
 import java.time.Instant;
 import java.util.Objects;
@@ -27,15 +28,25 @@ public class Coupon {
         return new Coupon(CouponId.newCouponId(), couponDefinition, 0, creationDate);
     }
 
-    public Coupon redeem() {
-        if (currentUsages >= couponDefinition.maxAllowedUsage()) {
+    public Coupon tryToRedeem() {
+        if (isUsageLimitReached()) {
             throw new CouponUsageLimitReachedException(couponDefinition.code());
         }
         return new Coupon(id, couponDefinition, currentUsages + 1, creationDate);
     }
 
-    public boolean isAvailableIn(CountryCode countryCode) {
-        return couponDefinition.countryCode() == countryCode;
+    public void validateForRedemption(CountryCode countryCode) {
+        if (getCouponDefinition().countryCode() != countryCode) {
+            throw new CouponNotAvailableInLocationException(
+                    getCouponDefinition().code());
+        }
+        if (isUsageLimitReached()) {
+            throw new CouponUsageLimitReachedException(getCouponDefinition().code());
+        }
+    }
+
+    private boolean isUsageLimitReached() {
+        return currentUsages >= couponDefinition.maxAllowedUsage();
     }
 
     public CouponId getId() {

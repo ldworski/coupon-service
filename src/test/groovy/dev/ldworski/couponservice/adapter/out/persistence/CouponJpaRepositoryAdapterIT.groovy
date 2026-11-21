@@ -110,6 +110,26 @@ class CouponJpaRepositoryAdapterIT extends Specification {
         "coupon is defined for other country" | CODE         | CountryCode.DE
     }
 
+    def "should find coupon by code"() {
+        given:
+        def coupon = adapter.registerCoupon(coupon(CODE))
+        entityManager.clear()
+
+        when:
+        def found = adapter.findByCode(new CouponCode(CODE))
+
+        then:
+        found.map { it.id } == Optional.of(coupon.id)
+    }
+
+    def "should not find coupon by code when code does not exist"() {
+        given:
+        adapter.registerCoupon(coupon(CODE))
+
+        expect:
+        adapter.findByCode(new CouponCode("SUMMER2026")).isEmpty()
+    }
+
     def "should find coupon for update by code"() {
         given:
         def coupon = adapter.registerCoupon(coupon(CODE))
@@ -135,7 +155,7 @@ class CouponJpaRepositoryAdapterIT extends Specification {
         def coupon = adapter.registerCoupon(coupon(CODE))
 
         when:
-        adapter.updateUsage(coupon.redeem())
+        adapter.updateUsage(coupon.tryToRedeem())
         entityManager.clear()
 
         then:

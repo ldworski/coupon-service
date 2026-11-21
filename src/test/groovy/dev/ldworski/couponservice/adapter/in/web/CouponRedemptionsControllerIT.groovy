@@ -1,7 +1,7 @@
 package dev.ldworski.couponservice.adapter.in.web
 
 import dev.ldworski.couponservice.domain.exception.CouponAlreadyRedeemedException
-import dev.ldworski.couponservice.domain.exception.CouponNotAvailableInCountryException
+import dev.ldworski.couponservice.domain.exception.CouponNotAvailableInLocationException
 import dev.ldworski.couponservice.domain.exception.CouponNotFoundException
 import dev.ldworski.couponservice.domain.exception.CouponUsageLimitReachedException
 import dev.ldworski.couponservice.domain.model.CouponCode
@@ -17,14 +17,7 @@ import org.springframework.http.MediaType
 import org.springframework.test.web.servlet.MockMvc
 import spock.lang.Specification
 
-import static org.hamcrest.Matchers.everyItem
-import static org.hamcrest.Matchers.hasItem
-import static org.hamcrest.Matchers.hasSize
-import static org.hamcrest.Matchers.is
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 
 @WebMvcTest(CouponRedemptionsController)
 class CouponRedemptionsControllerIT extends Specification {
@@ -151,11 +144,11 @@ class CouponRedemptionsControllerIT extends Specification {
                 .andExpect(jsonPath('$.instance').value("/coupons/WINTER2026/redemptions"))
 
         where:
-        description                              | exception                                                                                   || expectedStatus | expectedTitle                     | expectedDetail
-        "coupon does not exist"                  | new CouponNotFoundException(new CouponCode(CODE))                                           || 404            | "Coupon not found"                | "Coupon with code WINTER2026 not found"
-        "coupon is not available in country"     | new CouponNotAvailableInCountryException(new CouponCode(CODE))                              || 403            | "Coupon not available in country" | "Coupon with code WINTER2026 is not available in user's country"
-        "user has already redeemed coupon"       | new CouponAlreadyRedeemedException(CouponId.newCouponId(), USER_ID, null)                   || 409            | "Coupon already redeemed"         | "Coupon has already been redeemed by this user"
-        "coupon usage limit is reached"          | new CouponUsageLimitReachedException(new CouponCode(CODE))                                  || 409            | "Coupon usage limit reached"      | "Coupon with code WINTER2026 has reached its usage limit"
+        description                          | exception                                                                 || expectedStatus | expectedTitle                     | expectedDetail
+        "coupon does not exist"              | new CouponNotFoundException(new CouponCode(CODE))                         || 404            | "Coupon not found"                | "Coupon with code WINTER2026 not found"
+        "coupon is not available in country" | new CouponNotAvailableInLocationException(new CouponCode(CODE))           || 403            | "Coupon not available in country" | "Coupon with code WINTER2026 is not available for user's location"
+        "user has already redeemed coupon"   | new CouponAlreadyRedeemedException(CouponId.newCouponId(), USER_ID, null) || 409            | "Coupon already redeemed"         | "Coupon has already been redeemed by this user"
+        "coupon usage limit is reached"      | new CouponUsageLimitReachedException(new CouponCode(CODE))                || 409            | "Coupon usage limit reached"      | "Coupon with code WINTER2026 has reached its usage limit"
     }
 
     def "should return coupon code in problem details when #description"() {
@@ -171,10 +164,10 @@ class CouponRedemptionsControllerIT extends Specification {
         result.andExpect(jsonPath('$.code').value(CODE))
 
         where:
-        description                          | exception
-        "coupon does not exist"              | new CouponNotFoundException(new CouponCode(CODE))
-        "coupon is not available in country" | new CouponNotAvailableInCountryException(new CouponCode(CODE))
-        "coupon usage limit is reached"      | new CouponUsageLimitReachedException(new CouponCode(CODE))
+        description                           | exception
+        "coupon does not exist"               | new CouponNotFoundException(new CouponCode(CODE))
+        "coupon is not available in location" | new CouponNotAvailableInLocationException(new CouponCode(CODE))
+        "coupon usage limit is reached"       | new CouponUsageLimitReachedException(new CouponCode(CODE))
     }
 
     def "should return internal server error without exposing details when unexpected exception occurs"() {

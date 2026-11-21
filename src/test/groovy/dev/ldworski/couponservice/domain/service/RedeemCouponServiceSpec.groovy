@@ -1,7 +1,7 @@
 package dev.ldworski.couponservice.domain.service
 
 import dev.ldworski.couponservice.domain.exception.CouponAlreadyRedeemedException
-import dev.ldworski.couponservice.domain.exception.CouponNotAvailableInCountryException
+import dev.ldworski.couponservice.domain.exception.CouponNotAvailableInLocationException
 import dev.ldworski.couponservice.domain.exception.CouponNotFoundException
 import dev.ldworski.couponservice.domain.exception.CouponUsageLimitReachedException
 import dev.ldworski.couponservice.domain.model.CountryCode
@@ -32,6 +32,7 @@ class RedeemCouponServiceSpec extends Specification {
     private static final IpAddress IP_ADDRESS = new IpAddress("83.0.0.1")
     private static final Coupon COUPON = new Coupon(
             CouponId.newCouponId(), new CouponDefinition(CODE, 10, CountryCode.PL), 0, Instant.parse("2026-11-01T00:00:00Z"))
+    private static final Coupon EXHAUSTED_COUPON = new Coupon(COUPON.id, COUPON.couponDefinition, 10, COUPON.creationDate)
     private static final RedeemCouponCommand COMMAND = new RedeemCouponCommand(CODE, USER_ID, IP_ADDRESS)
 
     CountryIdentificationPort countryIdentificationPort = Mock()
@@ -47,12 +48,15 @@ class RedeemCouponServiceSpec extends Specification {
             transactionPort,
             Clock.fixed(NOW, ZoneOffset.UTC))
 
-    def "should register redemption and update coupon usage in one transaction"() {
+    def "should pre-validate coupon and then update usage and register redemption in one transaction"() {
         given:
         countryIdentificationPort.identifyCountry(IP_ADDRESS) >> Optional.of(CountryCode.PL)
 
         when:
         service.redeemCoupon(COMMAND)
+
+        then:
+        1 * couponRepositoryPort.findByCode(CODE) >> Optional.of(COUPON)
 
         then:
         1 * transactionPort.inTransaction(_) >> { Runnable operation -> operation.run() }
@@ -61,17 +65,16 @@ class RedeemCouponServiceSpec extends Specification {
         1 * couponRepositoryPort.findByCodeForUpdate(CODE) >> Optional.of(COUPON)
 
         then:
-        1 * couponRedemptionRepositoryPort.registerRedemption(new CouponRedemption(COUPON.id, USER_ID, NOW))
+        1 * couponRepositoryPort.updateUsage({ Coupon coupon -> coupon.id == COUPON.id && coupon.currentUsages == 1 })
 
         then:
-        1 * couponRepositoryPort.updateUsage({ Coupon coupon -> coupon.id == COUPON.id && coupon.currentUsages == 1 })
+        1 * couponRedemptionRepositoryPort.registerRedemption(new CouponRedemption(COUPON.id, USER_ID, NOW))
     }
 
     def "should not redeem coupon when coupon does not exist"() {
         given:
         countryIdentificationPort.identifyCountry(IP_ADDRESS) >> Optional.of(CountryCode.PL)
-        transactionPort.inTransaction(_) >> { Runnable operation -> operation.run() }
-        couponRepositoryPort.findByCodeForUpdate(CODE) >> Optional.empty()
+        couponRepositoryPort.findByCode(CODE) >> Optional.empty()
 
         when:
         service.redeemCoupon(COMMAND)
@@ -79,37 +82,51 @@ class RedeemCouponServiceSpec extends Specification {
         then:
         def exception = thrown(CouponNotFoundException)
         exception.code == CODE
+        0 * transactionPort._
         0 * couponRedemptionRepositoryPort._
-        0 * couponRepositoryPort.updateUsage(_)
     }
 
     def "should not redeem coupon when #description"() {
         given:
         countryIdentificationPort.identifyCountry(IP_ADDRESS) >> userCountry
-        transactionPort.inTransaction(_) >> { Runnable operation -> operation.run() }
-        couponRepositoryPort.findByCodeForUpdate(CODE) >> Optional.of(COUPON)
+        couponRepositoryPort.findByCode(CODE) >> Optional.of(COUPON)
 
         when:
         service.redeemCoupon(COMMAND)
 
         then:
-        def exception = thrown(CouponNotAvailableInCountryException)
+        def exception = thrown(CouponNotAvailableInLocationException)
         exception.code == CODE
+        0 * transactionPort._
         0 * couponRedemptionRepositoryPort._
-        0 * couponRepositoryPort.updateUsage(_)
 
         where:
-        description                                  | userCountry
-        "coupon is defined for other country"        | Optional.of(CountryCode.DE)
-        "user's country is not identified"           | Optional.empty()
+        description                           | userCountry
+        "coupon is defined for other country" | Optional.of(CountryCode.DE)
+        "user's country is not identified"    | Optional.empty()
     }
 
-    def "should fail when coupon usage limit is reached"() {
+    def "should not open transaction when coupon usage limit is already reached"() {
         given:
-        def exhaustedCoupon = new Coupon(COUPON.id, COUPON.couponDefinition, 10, COUPON.creationDate)
         countryIdentificationPort.identifyCountry(IP_ADDRESS) >> Optional.of(CountryCode.PL)
+        couponRepositoryPort.findByCode(CODE) >> Optional.of(EXHAUSTED_COUPON)
+
+        when:
+        service.redeemCoupon(COMMAND)
+
+        then:
+        def exception = thrown(CouponUsageLimitReachedException)
+        exception.code == CODE
+        0 * transactionPort._
+        0 * couponRedemptionRepositoryPort._
+    }
+
+    def "should fail when coupon usage limit is reached between pre-validation and lock"() {
+        given:
+        countryIdentificationPort.identifyCountry(IP_ADDRESS) >> Optional.of(CountryCode.PL)
+        couponRepositoryPort.findByCode(CODE) >> Optional.of(COUPON)
         transactionPort.inTransaction(_) >> { Runnable operation -> operation.run() }
-        couponRepositoryPort.findByCodeForUpdate(CODE) >> Optional.of(exhaustedCoupon)
+        couponRepositoryPort.findByCodeForUpdate(CODE) >> Optional.of(EXHAUSTED_COUPON)
 
         when:
         service.redeemCoupon(COMMAND)
@@ -118,11 +135,13 @@ class RedeemCouponServiceSpec extends Specification {
         def exception = thrown(CouponUsageLimitReachedException)
         exception.code == CODE
         0 * couponRepositoryPort.updateUsage(_)
+        0 * couponRedemptionRepositoryPort.registerRedemption(_)
     }
 
-    def "should not update coupon usage when user has already redeemed coupon"() {
+    def "should propagate already redeemed failure from redemption registration"() {
         given:
         countryIdentificationPort.identifyCountry(IP_ADDRESS) >> Optional.of(CountryCode.PL)
+        couponRepositoryPort.findByCode(CODE) >> Optional.of(COUPON)
         transactionPort.inTransaction(_) >> { Runnable operation -> operation.run() }
         couponRepositoryPort.findByCodeForUpdate(CODE) >> Optional.of(COUPON)
         def alreadyRedeemed = new CouponAlreadyRedeemedException(COUPON.id, USER_ID, null)
@@ -134,6 +153,5 @@ class RedeemCouponServiceSpec extends Specification {
         then:
         def exception = thrown(CouponAlreadyRedeemedException)
         exception.is(alreadyRedeemed)
-        0 * couponRepositoryPort.updateUsage(_)
     }
 }

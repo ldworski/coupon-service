@@ -1,5 +1,6 @@
 package dev.ldworski.couponservice.domain.model
 
+import dev.ldworski.couponservice.domain.exception.CouponNotAvailableInLocationException
 import dev.ldworski.couponservice.domain.exception.CouponUsageLimitReachedException
 import spock.lang.Specification
 
@@ -62,7 +63,7 @@ class CouponSpec extends Specification {
         def coupon = new Coupon(ID, COUPON_DEFINITION, 99, NOW)
 
         when:
-        def redeemed = coupon.redeem()
+        def redeemed = coupon.tryToRedeem()
 
         then:
         redeemed.currentUsages == 100
@@ -77,21 +78,48 @@ class CouponSpec extends Specification {
         def coupon = new Coupon(ID, COUPON_DEFINITION, 100, NOW)
 
         when:
-        coupon.redeem()
+        coupon.tryToRedeem()
 
         then:
         def exception = thrown(CouponUsageLimitReachedException)
         exception.code == COUPON_DEFINITION.code()
     }
 
-    def "should be available only in country it is defined for: #countryCode"() {
-        expect:
-        new Coupon(ID, COUPON_DEFINITION, 0, NOW).isAvailableIn(countryCode) == available
+    def "should pass validation for redemption when country matches and #currentUsages usages are below limit"() {
+        when:
+        new Coupon(ID, COUPON_DEFINITION, currentUsages, NOW).validateForRedemption(CountryCode.PL)
+
+        then:
+        noExceptionThrown()
 
         where:
-        countryCode    || available
-        CountryCode.PL || true
-        CountryCode.DE || false
+        currentUsages << [0, 99]
+    }
+
+    def "should fail validation for redemption when coupon is defined for other country"() {
+        when:
+        new Coupon(ID, COUPON_DEFINITION, 0, NOW).validateForRedemption(CountryCode.DE)
+
+        then:
+        def exception = thrown(CouponNotAvailableInLocationException)
+        exception.code == COUPON_DEFINITION.code()
+    }
+
+    def "should fail validation for redemption when usage limit is reached"() {
+        when:
+        new Coupon(ID, COUPON_DEFINITION, 100, NOW).validateForRedemption(CountryCode.PL)
+
+        then:
+        def exception = thrown(CouponUsageLimitReachedException)
+        exception.code == COUPON_DEFINITION.code()
+    }
+
+    def "should report country mismatch before usage limit when both fail validation for redemption"() {
+        when:
+        new Coupon(ID, COUPON_DEFINITION, 100, NOW).validateForRedemption(CountryCode.DE)
+
+        then:
+        thrown(CouponNotAvailableInLocationException)
     }
 
     def "should reject null #field"() {

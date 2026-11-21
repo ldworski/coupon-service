@@ -26,7 +26,7 @@ public class CouponRedemptionsController implements CouponRedemptionsApi {
 
     @Override
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
-    //TODO walidacje na code
+    // TODO walidacje na code
     public ResponseEntity<Void> redeemCoupon(
             @PathVariable String code, @RequestBody RedeemCouponRequest redeemCouponRequest) {
         var redeemCouponCommand = new RedeemCouponUseCase.RedeemCouponCommand(
