@@ -60,7 +60,7 @@ class CountryIdentificationAdapterIT extends Specification {
 
     def setup() {
         wireMock.resetAll()
-        cacheManager.getCache(CountryIdentificationAdapter.CACHE_NAME).clear()
+        cacheManager.getCache(CacheConfiguration.IP_COUNTRIES_CACHE).clear()
     }
 
     def cleanupSpec() {

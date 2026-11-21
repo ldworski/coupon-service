@@ -1,5 +1,7 @@
 package dev.ldworski.couponservice.adapter.out.location;
 
+import static dev.ldworski.couponservice.configuration.CacheConfiguration.IP_COUNTRIES_CACHE;
+
 import dev.ldworski.couponservice.domain.model.CountryCode;
 import dev.ldworski.couponservice.domain.model.IpAddress;
 import dev.ldworski.couponservice.domain.port.out.CountryIdentificationPort;
@@ -13,7 +15,6 @@ import org.springframework.web.client.RestClient;
 
 public class CountryIdentificationAdapter implements CountryIdentificationPort {
 
-    static final String CACHE_NAME = "ip-countries";
     private static final String GET_IP_LOCATION_PATH = "/api/v1/json";
     private final RestClient freeIpApiRestClient;
     private final RetryTemplate freeIpApiRetryTemplate;
@@ -24,7 +25,7 @@ public class CountryIdentificationAdapter implements CountryIdentificationPort {
     }
 
     @Override
-    @Cacheable(CACHE_NAME)
+    @Cacheable(IP_COUNTRIES_CACHE)
     public Optional<CountryCode> identifyCountry(IpAddress ipAddress) {
         var response = withRetries(() -> freeIpApiRestClient
                 .get()

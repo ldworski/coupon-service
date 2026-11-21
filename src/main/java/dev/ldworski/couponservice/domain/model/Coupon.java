@@ -45,7 +45,7 @@ public class Coupon {
         }
     }
 
-    private boolean isUsageLimitReached() {
+    public boolean isUsageLimitReached() {
         return currentUsages >= couponDefinition.maxAllowedUsage();
     }
 

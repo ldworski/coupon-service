@@ -1,5 +1,7 @@
 package dev.ldworski.couponservice.adapter.out.persistence;
 
+import static dev.ldworski.couponservice.configuration.CacheConfiguration.EXHAUSTED_COUPONS_CACHE;
+
 import dev.ldworski.couponservice.domain.exception.CouponCodeAlreadyExistsException;
 import dev.ldworski.couponservice.domain.model.CountryCode;
 import dev.ldworski.couponservice.domain.model.Coupon;
@@ -7,6 +9,7 @@ import dev.ldworski.couponservice.domain.model.CouponCode;
 import dev.ldworski.couponservice.domain.port.out.CouponRepositoryPort;
 import java.util.Optional;
 import org.hibernate.exception.ConstraintViolationException;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Component;
 
@@ -47,6 +50,7 @@ public class CouponJpaRepositoryAdapter implements CouponRepositoryPort {
     }
 
     @Override
+    @Cacheable(cacheNames = EXHAUSTED_COUPONS_CACHE, unless = "#result == null or !#result.usageLimitReached")
     public Optional<Coupon> findByCode(CouponCode code) {
         return couponEntityJpaRepository.findByCode(code.value()).map(couponPersistenceMapper::from);
     }

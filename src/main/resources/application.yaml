@@ -11,12 +11,15 @@ spring:
     open-in-view: false
     hibernate:
       ddl-auto: validate
-  cache:
-    cache-names: ip-countries
-    caffeine:
-      spec: maximumSize=50000,expireAfterWrite=12h
 
 coupon-service:
+  cache:
+    ip-countries:
+      maximum-size: 50000
+      expire-after-write: 12h
+    exhausted-coupons:
+      maximum-size: 10000
+      expire-after-write: 30d
   free-ip-api:
     base-url: https://free.freeipapi.com
     connect-timeout: 5s
