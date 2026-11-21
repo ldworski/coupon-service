@@ -7,5 +7,4 @@ import java.util.UUID;
 @Embeddable
 public record CouponRedemptionId(
         @Column(nullable = false, updatable = false) UUID couponId,
-        @Column(nullable = false, updatable = false) UUID userId)
-{}
+        @Column(nullable = false, updatable = false) UUID userId) {}

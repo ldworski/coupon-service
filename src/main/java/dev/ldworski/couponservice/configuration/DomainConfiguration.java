@@ -23,7 +23,7 @@ public class DomainConfiguration {
     }
 
     @Bean
-    RedeemCouponUseCase redeemCouponUseCase(){
+    RedeemCouponUseCase redeemCouponUseCase() {
         return new RedeemCouponService();
     }
 }

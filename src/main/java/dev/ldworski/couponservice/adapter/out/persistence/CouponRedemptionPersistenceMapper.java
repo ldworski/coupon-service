@@ -8,7 +8,9 @@ public class CouponRedemptionPersistenceMapper {
 
     public CouponRedemptionEntity from(CouponRedemption couponRedemption) {
         return new CouponRedemptionEntity(
-                new CouponRedemptionId(couponRedemption.couponId().value(), couponRedemption.userId().value()),
+                new CouponRedemptionId(
+                        couponRedemption.couponId().value(),
+                        couponRedemption.userId().value()),
                 couponRedemption.redemptionDate());
     }
 }

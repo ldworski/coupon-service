@@ -8,7 +8,9 @@ import java.util.UUID;
 @Schema(description = "Request to redeem a coupon")
 public record RedeemCouponRequest(
         @NotNull
-        @Schema(description = "Identifier of the user redeeming the coupon", example = "3fa85f64-5717-4562-b3fc-2c963f66afa6")
+        @Schema(
+                description = "Identifier of the user redeeming the coupon",
+                example = "3fa85f64-5717-4562-b3fc-2c963f66afa6")
         UUID userId,
 
         @NotNull

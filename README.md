@@ -67,8 +67,11 @@ Przykładowe żądania dla klienta HTTP z IntelliJ IDEA są w katalogu `http/` (
 | `./gradlew test`             | testy jednostkowe (bez klas `*IT`), nie wymagają Dockera               |
 | `./gradlew integrationTest`  | testy integracyjne (klasy `*IT`), PostgreSQL uruchamiany w Testcontainers, Free IP API zastąpione przez [WireMock](https://wiremock.org/) |
 | `./gradlew check`            | testy jednostkowe, integracyjne i sprawdzenie formatowania             |
+| `./gradlew jacocoTestReport` | testy jednostkowe i integracyjne + raport pokrycia kodu ([JaCoCo](https://www.jacoco.org/jacoco/)) |
 
 Testy są pisane w Groovy ([Spock](https://spockframework.org/)).
+
+Raport pokrycia (łączny dla obu rodzajów testów) trafia do `build/reports/jacoco/test/html/index.html` (wersja XML: `build/reports/jacoco/test/jacocoTestReport.xml`).
 
 ## Budowanie
 
@@ -80,12 +83,15 @@ Pełne budowanie: kompilacja, wszystkie testy (również integracyjne — wymaga
 
 Wykonywalny plik JAR trafia do `build/libs/`.
 
+Wersje wtyczek Gradle, bibliotek spoza zarządzania Spring Boot oraz narzędzi (JaCoCo, palantir-java-format) są
+zdefiniowane w `gradle.properties`.
+
 ## Formatowanie kodu
 
 Formatowanie jest pilnowane przez [Spotless](https://github.com/diffplug/spotless):
 
 - kod Java — [palantir-java-format](https://github.com/palantir/palantir-java-format),
-- skrypty `*.gradle.kts` — [ktlint](https://github.com/pinterest/ktlint).
+- skrypty `*.gradle` — formatter Groovy z Eclipse (greclipse), wcięcia 4 spacjami.
 
 Testy w Groovy nie są objęte formatowaniem.
 

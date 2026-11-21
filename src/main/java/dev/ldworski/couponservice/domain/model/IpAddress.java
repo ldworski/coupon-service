@@ -9,8 +9,7 @@ public class IpAddress {
 
     public IpAddress(String value) {
         Objects.requireNonNull(value, "value must not be null");
-        this.ipAddress =
-                InetAddress.ofLiteral(value);
+        this.ipAddress = InetAddress.ofLiteral(value);
     }
 
     public String getValue() {

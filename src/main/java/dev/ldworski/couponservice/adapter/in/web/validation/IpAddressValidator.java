@@ -12,7 +12,7 @@ public class IpAddressValidator implements ConstraintValidator<ValidIpAddress, S
             return true;
         }
         try {
-            //TODO nie podoba mi się to
+            // TODO nie podoba mi się to
             new IpAddress(value);
             return true;
         } catch (IllegalArgumentException exception) {

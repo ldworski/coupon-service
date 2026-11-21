@@ -5,7 +5,5 @@ import dev.ldworski.couponservice.domain.port.in.RedeemCouponUseCase;
 public class RedeemCouponService implements RedeemCouponUseCase {
 
     @Override
-    public void redeemCoupon(RedeemCouponCommand command) {
-
-    }
+    public void redeemCoupon(RedeemCouponCommand command) {}
 }

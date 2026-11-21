@@ -19,7 +19,7 @@ import tools.jackson.databind.exc.InvalidFormatException;
 import tools.jackson.databind.exc.MismatchedInputException;
 
 @RestControllerAdvice
-//TODO przemyśleć walidacje i ich obsługę
+// TODO przemyśleć walidacje i ich obsługę
 class RestExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(RestExceptionHandler.class);

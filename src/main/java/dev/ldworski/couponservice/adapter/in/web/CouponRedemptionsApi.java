@@ -40,7 +40,9 @@ interface CouponRedemptionsApi {
     ResponseEntity<Void> redeemCoupon(
             @Parameter(description = "Code of the coupon to redeem", example = "WINTER2026")
                     @Size(max = CouponCode.MAX_LENGTH)
-                    @Pattern(regexp = CouponCode.ALLOWED_CHARACTERS_REGEX, message = CouponCode.ALLOWED_CHARACTERS_MESSAGE)
+                    @Pattern(
+                            regexp = CouponCode.ALLOWED_CHARACTERS_REGEX,
+                            message = CouponCode.ALLOWED_CHARACTERS_MESSAGE)
                     String code,
             @Valid RedeemCouponRequest redeemCouponRequest);
 }
