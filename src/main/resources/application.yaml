@@ -11,6 +11,8 @@ spring:
     open-in-view: false
     hibernate:
       ddl-auto: validate
+    properties:
+      jakarta.persistence.lock.timeout: 3000
 
 coupon-service:
   cache:
