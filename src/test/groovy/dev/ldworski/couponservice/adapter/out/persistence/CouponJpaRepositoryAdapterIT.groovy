@@ -110,6 +110,52 @@ class CouponJpaRepositoryAdapterIT extends Specification {
         "coupon is defined for other country" | CODE         | CountryCode.DE
     }
 
+    def "should find coupon for update by code"() {
+        given:
+        def coupon = adapter.registerCoupon(coupon(CODE))
+        entityManager.clear()
+
+        when:
+        def found = adapter.findByCodeForUpdate(new CouponCode(CODE))
+
+        then:
+        found.map { it.id } == Optional.of(coupon.id)
+    }
+
+    def "should not find coupon for update when code does not exist"() {
+        given:
+        adapter.registerCoupon(coupon(CODE))
+
+        expect:
+        adapter.findByCodeForUpdate(new CouponCode("SUMMER2026")).isEmpty()
+    }
+
+    def "should update coupon usage"() {
+        given:
+        def coupon = adapter.registerCoupon(coupon(CODE))
+
+        when:
+        adapter.updateUsage(coupon.redeem())
+        entityManager.clear()
+
+        then:
+        couponEntityJpaRepository.findById(coupon.id.value()).orElseThrow().currentUsage == 1
+    }
+
+    def "should reject current usage exceeding max allowed usage on database level"() {
+        given:
+        def coupon = adapter.registerCoupon(coupon(CODE))
+
+        when:
+        entityManager.createNativeQuery("UPDATE coupon SET current_usage = max_allowed_usage + 1 WHERE id = :id")
+                .setParameter("id", coupon.id.value())
+                .executeUpdate()
+
+        then:
+        def exception = thrown(ConstraintViolationException)
+        exception.constraintName == "ck_coupon_current_usage_within_limit"
+    }
+
     def "should reject code with invalid format on database level when #description"() {
         when:
         entityManager.createNativeQuery("""

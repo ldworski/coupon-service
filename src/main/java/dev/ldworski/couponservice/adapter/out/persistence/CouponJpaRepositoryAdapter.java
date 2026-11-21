@@ -46,6 +46,21 @@ public class CouponJpaRepositoryAdapter implements CouponRepositoryPort {
                 .map(couponPersistenceMapper::from);
     }
 
+    @Override
+    public Optional<Coupon> findByCodeForUpdate(CouponCode code) {
+        return couponEntityJpaRepository
+                .findWithLockByCode(code.value())
+                .map(couponPersistenceMapper::from);
+    }
+
+    @Override
+    public void updateUsage(Coupon coupon) {
+        var couponEntity =
+                couponEntityJpaRepository.findById(coupon.getId().value()).orElseThrow();
+        couponEntity.setCurrentUsage(coupon.getCurrentUsages());
+        couponEntityJpaRepository.saveAndFlush(couponEntity);
+    }
+
     private boolean isCouponCodeDuplicated(ConstraintViolationException violation) {
         return "uq_coupon_code".equals(violation.getConstraintName());
     }

@@ -1,6 +1,11 @@
 package dev.ldworski.couponservice.adapter.in.web
 
+import dev.ldworski.couponservice.domain.exception.CouponAlreadyRedeemedException
+import dev.ldworski.couponservice.domain.exception.CouponNotAvailableInCountryException
+import dev.ldworski.couponservice.domain.exception.CouponNotFoundException
+import dev.ldworski.couponservice.domain.exception.CouponUsageLimitReachedException
 import dev.ldworski.couponservice.domain.model.CouponCode
+import dev.ldworski.couponservice.domain.model.CouponId
 import dev.ldworski.couponservice.domain.model.IpAddress
 import dev.ldworski.couponservice.domain.model.UserId
 import dev.ldworski.couponservice.domain.port.in.RedeemCouponUseCase
@@ -126,6 +131,50 @@ class CouponRedemptionsControllerIT extends Specification {
         and:
         result.andExpect(status().isBadRequest())
                 .andExpect(jsonPath('$.title').value("Malformed request"))
+    }
+
+    def "should return #expectedStatus when #description"() {
+        given:
+        redeemCouponUseCase.redeemCoupon(_) >> { throw exception }
+
+        when:
+        def result = mockMvc.perform(post("/coupons/{code}/redemptions", CODE)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(VALID_BODY))
+
+        then:
+        result.andExpect(status().is(expectedStatus))
+                .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath('$.status').value(expectedStatus))
+                .andExpect(jsonPath('$.title').value(expectedTitle))
+                .andExpect(jsonPath('$.detail').value(expectedDetail))
+                .andExpect(jsonPath('$.instance').value("/coupons/WINTER2026/redemptions"))
+
+        where:
+        description                              | exception                                                                                   || expectedStatus | expectedTitle                     | expectedDetail
+        "coupon does not exist"                  | new CouponNotFoundException(new CouponCode(CODE))                                           || 404            | "Coupon not found"                | "Coupon with code WINTER2026 not found"
+        "coupon is not available in country"     | new CouponNotAvailableInCountryException(new CouponCode(CODE))                              || 403            | "Coupon not available in country" | "Coupon with code WINTER2026 is not available in user's country"
+        "user has already redeemed coupon"       | new CouponAlreadyRedeemedException(CouponId.newCouponId(), USER_ID, null)                   || 409            | "Coupon already redeemed"         | "Coupon has already been redeemed by this user"
+        "coupon usage limit is reached"          | new CouponUsageLimitReachedException(new CouponCode(CODE))                                  || 409            | "Coupon usage limit reached"      | "Coupon with code WINTER2026 has reached its usage limit"
+    }
+
+    def "should return coupon code in problem details when #description"() {
+        given:
+        redeemCouponUseCase.redeemCoupon(_) >> { throw exception }
+
+        when:
+        def result = mockMvc.perform(post("/coupons/{code}/redemptions", CODE)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(VALID_BODY))
+
+        then:
+        result.andExpect(jsonPath('$.code').value(CODE))
+
+        where:
+        description                          | exception
+        "coupon does not exist"              | new CouponNotFoundException(new CouponCode(CODE))
+        "coupon is not available in country" | new CouponNotAvailableInCountryException(new CouponCode(CODE))
+        "coupon usage limit is reached"      | new CouponUsageLimitReachedException(new CouponCode(CODE))
     }
 
     def "should return internal server error without exposing details when unexpected exception occurs"() {

@@ -2,7 +2,10 @@ package dev.ldworski.couponservice.configuration;
 
 import dev.ldworski.couponservice.domain.port.in.RedeemCouponUseCase;
 import dev.ldworski.couponservice.domain.port.in.RegisterCouponUseCase;
+import dev.ldworski.couponservice.domain.port.out.CountryIdentificationPort;
+import dev.ldworski.couponservice.domain.port.out.CouponRedemptionRepositoryPort;
 import dev.ldworski.couponservice.domain.port.out.CouponRepositoryPort;
+import dev.ldworski.couponservice.domain.port.out.TransactionPort;
 import dev.ldworski.couponservice.domain.service.RedeemCouponService;
 import dev.ldworski.couponservice.domain.service.RegisterCouponService;
 import java.time.Clock;
@@ -23,7 +26,17 @@ public class DomainConfiguration {
     }
 
     @Bean
-    RedeemCouponUseCase redeemCouponUseCase() {
-        return new RedeemCouponService();
+    RedeemCouponUseCase redeemCouponUseCase(
+            CountryIdentificationPort countryIdentificationPort,
+            CouponRepositoryPort couponRepositoryPort,
+            CouponRedemptionRepositoryPort couponRedemptionRepositoryPort,
+            TransactionPort transactionPort,
+            Clock clock) {
+        return new RedeemCouponService(
+                countryIdentificationPort,
+                couponRepositoryPort,
+                couponRedemptionRepositoryPort,
+                transactionPort,
+                clock);
     }
 }

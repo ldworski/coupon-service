@@ -10,4 +10,8 @@ public interface CouponRepositoryPort {
     Coupon registerCoupon(Coupon coupon);
 
     Optional<Coupon> findByCodeAndCountryCode(CouponCode code, CountryCode countryCode);
+
+    Optional<Coupon> findByCodeForUpdate(CouponCode code);
+
+    void updateUsage(Coupon coupon);
 }

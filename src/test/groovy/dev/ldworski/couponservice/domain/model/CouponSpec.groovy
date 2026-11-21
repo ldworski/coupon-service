@@ -1,5 +1,6 @@
 package dev.ldworski.couponservice.domain.model
 
+import dev.ldworski.couponservice.domain.exception.CouponUsageLimitReachedException
 import spock.lang.Specification
 
 import java.time.Instant
@@ -37,6 +38,60 @@ class CouponSpec extends Specification {
         then:
         def exception = thrown(IllegalArgumentException)
         exception.message == "current usages cannot be negative"
+    }
+
+    def "should reject current usages exceeding max allowed usage"() {
+        when:
+        new Coupon(ID, COUPON_DEFINITION, 101, NOW)
+
+        then:
+        def exception = thrown(IllegalArgumentException)
+        exception.message == "current usages cannot exceed max allowed usage"
+    }
+
+    def "should allow current usages equal to max allowed usage"() {
+        when:
+        def coupon = new Coupon(ID, COUPON_DEFINITION, 100, NOW)
+
+        then:
+        coupon.currentUsages == 100
+    }
+
+    def "should return coupon with incremented usages when redeemed"() {
+        given:
+        def coupon = new Coupon(ID, COUPON_DEFINITION, 99, NOW)
+
+        when:
+        def redeemed = coupon.redeem()
+
+        then:
+        redeemed.currentUsages == 100
+        redeemed.id == ID
+        redeemed.couponDefinition == COUPON_DEFINITION
+        redeemed.creationDate == NOW
+        coupon.currentUsages == 99
+    }
+
+    def "should not redeem coupon when usage limit is reached"() {
+        given:
+        def coupon = new Coupon(ID, COUPON_DEFINITION, 100, NOW)
+
+        when:
+        coupon.redeem()
+
+        then:
+        def exception = thrown(CouponUsageLimitReachedException)
+        exception.code == COUPON_DEFINITION.code()
+    }
+
+    def "should be available only in country it is defined for: #countryCode"() {
+        expect:
+        new Coupon(ID, COUPON_DEFINITION, 0, NOW).isAvailableIn(countryCode) == available
+
+        where:
+        countryCode    || available
+        CountryCode.PL || true
+        CountryCode.DE || false
     }
 
     def "should reject null #field"() {

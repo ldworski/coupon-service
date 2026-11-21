@@ -1,5 +1,6 @@
 package dev.ldworski.couponservice.domain.model;
 
+import dev.ldworski.couponservice.domain.exception.CouponUsageLimitReachedException;
 import java.time.Instant;
 import java.util.Objects;
 
@@ -15,12 +16,26 @@ public class Coupon {
         if (currentUsages < 0) {
             throw new IllegalArgumentException("current usages cannot be negative");
         }
+        if (currentUsages > couponDefinition.maxAllowedUsage()) {
+            throw new IllegalArgumentException("current usages cannot exceed max allowed usage");
+        }
         this.currentUsages = currentUsages;
         this.creationDate = Objects.requireNonNull(creationDate, "creationDate must not be null");
     }
 
     public static Coupon newCoupon(CouponDefinition couponDefinition, Instant creationDate) {
         return new Coupon(CouponId.newCouponId(), couponDefinition, 0, creationDate);
+    }
+
+    public Coupon redeem() {
+        if (currentUsages >= couponDefinition.maxAllowedUsage()) {
+            throw new CouponUsageLimitReachedException(couponDefinition.code());
+        }
+        return new Coupon(id, couponDefinition, currentUsages + 1, creationDate);
+    }
+
+    public boolean isAvailableIn(CountryCode countryCode) {
+        return couponDefinition.countryCode() == countryCode;
     }
 
     public CouponId getId() {
