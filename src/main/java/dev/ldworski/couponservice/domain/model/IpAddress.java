@@ -1,33 +1,18 @@
 package dev.ldworski.couponservice.domain.model;
 
-import java.net.InetAddress;
 import java.util.Objects;
+import org.apache.commons.validator.routines.InetAddressValidator;
 
-public class IpAddress {
+public record IpAddress(String value) {
 
-    private final InetAddress ipAddress;
-
-    public IpAddress(String value) {
+    public IpAddress {
         Objects.requireNonNull(value, "value must not be null");
-        this.ipAddress = InetAddress.ofLiteral(value);
+        if (!isValid(value)) {
+            throw new IllegalArgumentException("value must be a valid IPv4 or IPv6 address");
+        }
     }
 
-    public String getValue() {
-        return ipAddress.getHostAddress();
-    }
-
-    @Override
-    public boolean equals(Object other) {
-        return other instanceof IpAddress that && ipAddress.equals(that.ipAddress);
-    }
-
-    @Override
-    public int hashCode() {
-        return ipAddress.hashCode();
-    }
-
-    @Override
-    public String toString() {
-        return getValue();
+    public static boolean isValid(String value) {
+        return InetAddressValidator.getInstance().isValid(value);
     }
 }

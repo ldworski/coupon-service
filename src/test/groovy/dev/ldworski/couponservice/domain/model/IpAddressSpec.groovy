@@ -9,35 +9,26 @@ class IpAddressSpec extends Specification {
         def ipAddress = new IpAddress(value)
 
         then:
-        ipAddress.getValue() == normalized
+        ipAddress.value() == value
 
         where:
-        description                | value                                     || normalized
-        "IPv4 address"             | "192.168.0.1"                             || "192.168.0.1"
-        "lowest IPv4 address"      | "0.0.0.0"                                 || "0.0.0.0"
-        "highest IPv4 address"     | "255.255.255.255"                         || "255.255.255.255"
-        "IPv4 loopback"            | "127.0.0.1"                               || "127.0.0.1"
-        "IPv4 in legacy short form" | "127.1"                                  || "127.0.0.1"
-        "full IPv6 address"        | "2001:0db8:0000:0000:0000:0000:0000:0001" || "2001:db8:0:0:0:0:0:1"
-        "compressed IPv6 address"  | "2001:db8::1"                             || "2001:db8:0:0:0:0:0:1"
-        "upper case IPv6 address"  | "2001:DB8::1"                             || "2001:db8:0:0:0:0:0:1"
-        "IPv6 loopback"            | "::1"                                     || "0:0:0:0:0:0:0:1"
-        "IPv6 unspecified address" | "::"                                      || "0:0:0:0:0:0:0:0"
-        "IPv4-mapped IPv6 address" | "::ffff:192.168.0.1"                      || "192.168.0.1"
+        description                | value
+        "IPv4 address"             | "192.168.0.1"
+        "lowest IPv4 address"      | "0.0.0.0"
+        "highest IPv4 address"     | "255.255.255.255"
+        "IPv4 loopback"            | "127.0.0.1"
+        "full IPv6 address"        | "2001:0db8:0000:0000:0000:0000:0000:0001"
+        "compressed IPv6 address"  | "2001:db8::1"
+        "upper case IPv6 address"  | "2001:DB8::1"
+        "IPv6 loopback"            | "::1"
+        "IPv6 unspecified address" | "::"
+        "IPv4-mapped IPv6 address" | "::ffff:192.168.0.1"
     }
 
-    def "should be equal for different notations of the same address: '#first' and '#second'"() {
+    def "should be equal for the same address"() {
         expect:
-        new IpAddress(first) == new IpAddress(second)
-        new IpAddress(first).hashCode() == new IpAddress(second).hashCode()
-
-        where:
-        first                | second
-        "192.168.0.1"        | "192.168.0.1"
-        "127.1"              | "127.0.0.1"
-        "::1"                | "0:0:0:0:0:0:0:1"
-        "2001:DB8::1"        | "2001:0db8:0000:0000:0000:0000:0000:0001"
-        "::ffff:192.168.0.1" | "192.168.0.1"
+        new IpAddress("192.168.0.1") == new IpAddress("192.168.0.1")
+        new IpAddress("192.168.0.1").hashCode() == new IpAddress("192.168.0.1").hashCode()
     }
 
     def "should not be equal for different addresses: '#first' and '#second'"() {
@@ -49,11 +40,6 @@ class IpAddressSpec extends Specification {
         "192.168.0.1" | "192.168.0.2"
         "::1"         | "127.0.0.1"
         "2001:db8::1" | "2001:db8::2"
-    }
-
-    def "should use normalized address as text representation"() {
-        expect:
-        new IpAddress("2001:DB8::1").toString() == "2001:db8:0:0:0:0:0:1"
     }
 
     def "should reject null value"() {
@@ -70,11 +56,13 @@ class IpAddressSpec extends Specification {
         new IpAddress(value)
 
         then:
-        thrown(IllegalArgumentException)
+        def exception = thrown(IllegalArgumentException)
+        exception.message == "value must be a valid IPv4 or IPv6 address"
 
         where:
         description                    | value
         "it is empty"                  | ""
+        "IPv4 is in legacy short form" | "127.1"
         "it is whitespace only"        | "   "
         "it has leading whitespace"    | " 192.168.0.1"
         "it has trailing whitespace"   | "192.168.0.1 "

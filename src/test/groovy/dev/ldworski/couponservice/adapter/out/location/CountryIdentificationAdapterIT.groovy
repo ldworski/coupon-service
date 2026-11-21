@@ -81,7 +81,7 @@ class CountryIdentificationAdapterIT extends Specification {
         where:
         ip             | path                    | response                  || expected
         "83.0.0.1"     | "83.0.0.1"              | "identified-pl-ipv4.json" || CountryCode.PL
-        "2a02:8108::1" | "2a02:8108:0:0:0:0:0:1" | "identified-de-ipv6.json" || CountryCode.DE
+        "2a02:8108::1" | "2a02:8108::1"          | "identified-de-ipv6.json" || CountryCode.DE
     }
 
     def "should return empty when country is not supported"() {
@@ -103,7 +103,7 @@ class CountryIdentificationAdapterIT extends Specification {
         description     | ip          | path
         "private"       | "10.0.0.1"  | "10.0.0.1"
         "loopback"      | "127.0.0.1" | "127.0.0.1"
-        "IPv6 loopback" | "::1"       | "0:0:0:0:0:0:0:1"
+        "IPv6 loopback" | "::1"       | "::1"
     }
 
     def "should return empty when response body is empty"() {
@@ -196,20 +196,6 @@ class CountryIdentificationAdapterIT extends Specification {
         first.isEmpty()
         second.isEmpty()
         requestCount("10.0.0.1") == 1
-    }
-
-    def "should share cache entry between different notations of the same IP"() {
-        given:
-        stubFor("2a02:8108:0:0:0:0:0:1", okJson(freeIpApiResponse("identified-de-ipv6.json")))
-
-        when:
-        def compressed = countryIdentificationPort.identifyCountry(new IpAddress("2a02:8108::1"))
-        def full = countryIdentificationPort.identifyCountry(new IpAddress("2a02:8108:0:0:0:0:0:1"))
-
-        then:
-        compressed == Optional.of(CountryCode.DE)
-        full == Optional.of(CountryCode.DE)
-        requestCount("2a02:8108:0:0:0:0:0:1") == 1
     }
 
     def "should call Free IP API for each different IP"() {

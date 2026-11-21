@@ -30,7 +30,7 @@ public class CountryIdentificationAdapter implements CountryIdentificationPort {
                 .get()
                 .uri(uriBuilder -> uriBuilder
                         .path(GET_IP_LOCATION_PATH)
-                        .pathSegment(ipAddress.getValue())
+                        .pathSegment(ipAddress.value())
                         .build())
                 .retrieve()
                 .body(FreeIpApiResponse.class));

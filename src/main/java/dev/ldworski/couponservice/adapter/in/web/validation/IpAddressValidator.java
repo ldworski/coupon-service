@@ -8,15 +8,6 @@ public class IpAddressValidator implements ConstraintValidator<ValidIpAddress, S
 
     @Override
     public boolean isValid(String value, ConstraintValidatorContext context) {
-        if (value == null) {
-            return true;
-        }
-        try {
-            // TODO nie podoba mi się to
-            new IpAddress(value);
-            return true;
-        } catch (IllegalArgumentException exception) {
-            return false;
-        }
+        return value == null || IpAddress.isValid(value);
     }
 }
