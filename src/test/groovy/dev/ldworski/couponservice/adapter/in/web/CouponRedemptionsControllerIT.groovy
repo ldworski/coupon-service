@@ -1,5 +1,6 @@
 package dev.ldworski.couponservice.adapter.in.web
 
+import dev.ldworski.couponservice.domain.exception.CountryIdentificationUnavailableException
 import dev.ldworski.couponservice.domain.exception.CouponAlreadyRedeemedException
 import dev.ldworski.couponservice.domain.exception.CouponNotAvailableInLocationException
 import dev.ldworski.couponservice.domain.exception.CouponNotFoundException
@@ -17,7 +18,7 @@ import org.springframework.dao.PessimisticLockingFailureException
 import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
 import org.springframework.test.web.servlet.MockMvc
-import spock.lang.Specification
+import dev.ldworski.couponservice.IntegrationTestSpecification
 
 import static org.hamcrest.Matchers.everyItem
 import static org.hamcrest.Matchers.hasItem
@@ -30,7 +31,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 
 @WebMvcTest(CouponRedemptionsController)
-class CouponRedemptionsControllerIT extends Specification {
+class CouponRedemptionsControllerIT extends IntegrationTestSpecification {
 
     private static final String CODE = "WINTER2026"
     private static final String USER_UUID = "3fa85f64-5717-4562-b3fc-2c963f66afa6"
@@ -160,11 +161,12 @@ class CouponRedemptionsControllerIT extends Specification {
         "user has already redeemed coupon"   | new CouponAlreadyRedeemedException(CouponId.newCouponId(), USER_ID, null) || 409            | "Coupon already redeemed"         | "Coupon has already been redeemed by this user"
         "coupon usage limit is reached"      | new CouponUsageLimitReachedException(new CouponCode(CODE))                || 409            | "Coupon usage limit reached"      | "Coupon with code WINTER2026 has reached its usage limit"
         "coupon lock is not acquired in time" | new PessimisticLockingFailureException("lock timeout")                   || 503            | "Resource temporarily unavailable" | "Resource is temporarily locked, try again later"
+        "location service is unavailable"     | new CountryIdentificationUnavailableException(new RuntimeException()) || 503   | "Location service unavailable"     | "Unable to identify user's location, try again later"
     }
 
-    def "should return retry after header when coupon lock is not acquired in time"() {
+    def "should return retry after header when #description"() {
         given:
-        redeemCouponUseCase.redeemCoupon(_) >> { throw new PessimisticLockingFailureException("lock timeout") }
+        redeemCouponUseCase.redeemCoupon(_) >> { throw exception }
 
         when:
         def result = mockMvc.perform(post("/coupons/{code}/redemptions", CODE)
@@ -173,7 +175,12 @@ class CouponRedemptionsControllerIT extends Specification {
 
         then:
         result.andExpect(status().isServiceUnavailable())
-                .andExpect(header().string(HttpHeaders.RETRY_AFTER, "1"))
+                .andExpect(header().string(HttpHeaders.RETRY_AFTER, expectedRetryAfter))
+
+        where:
+        description                           | exception                                                              || expectedRetryAfter
+        "coupon lock is not acquired in time" | new PessimisticLockingFailureException("lock timeout")                 || "1"
+        "location service is unavailable"     | new CountryIdentificationUnavailableException(new RuntimeException()) || "1"
     }
 
     def "should return coupon code in problem details when #description"() {

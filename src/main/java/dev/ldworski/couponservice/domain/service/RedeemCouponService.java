@@ -33,13 +33,14 @@ public class RedeemCouponService implements RedeemCouponUseCase {
 
     @Override
     public void redeemCoupon(RedeemCouponCommand command) {
-        var countryCode = countryIdentificationPort
-                .identifyCountry(command.ipAddress())
-                .orElseThrow(() -> new CouponNotAvailableInLocationException(command.code()));
         var coupon = couponRepositoryPort
                 .findByCode(command.code())
                 .orElseThrow(() -> new CouponNotFoundException(command.code()));
-        coupon.validateForRedemption(countryCode);
+        coupon.validateUsageLimitNotReached();
+        var countryCode = countryIdentificationPort
+                .identifyCountry(command.ipAddress())
+                .orElseThrow(() -> new CouponNotAvailableInLocationException(command.code()));
+        coupon.validateAvailableIn(countryCode);
         tryToRedeemCoupon(command);
     }
 

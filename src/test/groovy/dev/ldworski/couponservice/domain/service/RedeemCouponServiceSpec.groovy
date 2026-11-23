@@ -49,14 +49,14 @@ class RedeemCouponServiceSpec extends Specification {
             Clock.fixed(NOW, ZoneOffset.UTC))
 
     def "should pre-validate coupon and then update usage and register redemption in one transaction"() {
-        given:
-        countryIdentificationPort.identifyCountry(IP_ADDRESS) >> Optional.of(CountryCode.PL)
-
         when:
         service.redeemCoupon(COMMAND)
 
         then:
         1 * couponRepositoryPort.findByCode(CODE) >> Optional.of(COUPON)
+
+        then:
+        1 * countryIdentificationPort.identifyCountry(IP_ADDRESS) >> Optional.of(CountryCode.PL)
 
         then:
         1 * transactionPort.inTransaction(_) >> { Runnable operation -> operation.run() }
@@ -71,9 +71,8 @@ class RedeemCouponServiceSpec extends Specification {
         1 * couponRedemptionRepositoryPort.registerRedemption(new CouponRedemption(COUPON.id, USER_ID, NOW))
     }
 
-    def "should not redeem coupon when coupon does not exist"() {
+    def "should not identify country when coupon does not exist"() {
         given:
-        countryIdentificationPort.identifyCountry(IP_ADDRESS) >> Optional.of(CountryCode.PL)
         couponRepositoryPort.findByCode(CODE) >> Optional.empty()
 
         when:
@@ -82,6 +81,7 @@ class RedeemCouponServiceSpec extends Specification {
         then:
         def exception = thrown(CouponNotFoundException)
         exception.code == CODE
+        0 * countryIdentificationPort._
         0 * transactionPort._
         0 * couponRedemptionRepositoryPort._
     }
@@ -106,9 +106,8 @@ class RedeemCouponServiceSpec extends Specification {
         "user's country is not identified"    | Optional.empty()
     }
 
-    def "should not open transaction when coupon usage limit is already reached"() {
+    def "should neither identify country nor open transaction when coupon usage limit is already reached"() {
         given:
-        countryIdentificationPort.identifyCountry(IP_ADDRESS) >> Optional.of(CountryCode.PL)
         couponRepositoryPort.findByCode(CODE) >> Optional.of(EXHAUSTED_COUPON)
 
         when:
@@ -117,6 +116,7 @@ class RedeemCouponServiceSpec extends Specification {
         then:
         def exception = thrown(CouponUsageLimitReachedException)
         exception.code == CODE
+        0 * countryIdentificationPort._
         0 * transactionPort._
         0 * couponRedemptionRepositoryPort._
     }

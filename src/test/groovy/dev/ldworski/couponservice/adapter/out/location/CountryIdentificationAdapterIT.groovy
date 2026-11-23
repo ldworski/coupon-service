@@ -14,6 +14,7 @@ import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder
 import com.github.tomakehurst.wiremock.http.Fault
 import dev.ldworski.couponservice.configuration.CacheConfiguration
+import dev.ldworski.couponservice.domain.exception.CountryIdentificationUnavailableException
 import dev.ldworski.couponservice.domain.model.CountryCode
 import dev.ldworski.couponservice.domain.model.IpAddress
 import dev.ldworski.couponservice.domain.port.out.CountryIdentificationPort
@@ -29,17 +30,11 @@ import org.springframework.test.context.DynamicPropertySource
 import org.springframework.web.client.HttpClientErrorException
 import org.springframework.web.client.HttpServerErrorException
 import org.springframework.web.client.ResourceAccessException
-import spock.lang.Specification
+import dev.ldworski.couponservice.IntegrationTestSpecification
 
-@SpringBootTest(
-        classes = [FreeIpApiConfiguration, CacheConfiguration],
-        properties = [
-                "coupon-service.free-ip-api.retry.delay=10ms",
-                "coupon-service.free-ip-api.retry.jitter=5ms",
-                "coupon-service.free-ip-api.retry.max-delay=100ms"
-        ])
+@SpringBootTest(classes = [FreeIpApiConfiguration, CacheConfiguration])
 @ImportAutoConfiguration(CacheAutoConfiguration)
-class CountryIdentificationAdapterIT extends Specification {
+class CountryIdentificationAdapterIT extends IntegrationTestSpecification {
 
     static final WireMockServer wireMock = new WireMockServer(options().dynamicPort())
 
@@ -122,7 +117,8 @@ class CountryIdentificationAdapterIT extends Specification {
         countryIdentificationPort.identifyCountry(new IpAddress("83.0.0.1"))
 
         then:
-        thrown(HttpClientErrorException.TooManyRequests)
+        def exception = thrown(CountryIdentificationUnavailableException)
+        exception.cause instanceof HttpClientErrorException.TooManyRequests
         requestCount("83.0.0.1") == 1
     }
 
@@ -153,7 +149,7 @@ class CountryIdentificationAdapterIT extends Specification {
         requestCount("83.0.0.1") == 4
     }
 
-    def "should propagate last error when Free IP API is unavailable after 3 retries due to #description"() {
+    def "should throw domain exception with last error as cause when Free IP API is unavailable after 3 retries due to #description"() {
         given:
         stubFor("83.0.0.1", response)
 
@@ -161,11 +157,12 @@ class CountryIdentificationAdapterIT extends Specification {
         countryIdentificationPort.identifyCountry(new IpAddress("83.0.0.1"))
 
         then:
-        thrown(expected)
+        def exception = thrown(CountryIdentificationUnavailableException)
+        expectedCause.isInstance(exception.cause)
         requestCount("83.0.0.1") == 4
 
         where:
-        description          | response                                                || expected
+        description          | response                                                || expectedCause
         "server error"       | serverError()                                           || HttpServerErrorException
         "connection failure" | aResponse().withFault(Fault.CONNECTION_RESET_BY_PEER)   || ResourceAccessException
     }
@@ -222,7 +219,7 @@ class CountryIdentificationAdapterIT extends Specification {
         countryIdentificationPort.identifyCountry(new IpAddress("83.0.0.1"))
 
         then:
-        thrown(HttpServerErrorException)
+        thrown(CountryIdentificationUnavailableException)
 
         when: "Free IP API is available again - the most recently added stub takes precedence"
         stubFor("83.0.0.1", okJson(freeIpApiResponse("identified-pl-ipv4.json")))

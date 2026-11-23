@@ -11,13 +11,13 @@ import org.hibernate.exception.ConstraintViolationException
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest
 import org.springframework.context.annotation.Import
-import spock.lang.Specification
+import dev.ldworski.couponservice.IntegrationTestSpecification
 
 import java.time.Instant
 
 @DataJpaTest
 @Import([TestcontainersConfiguration, CouponJpaRepositoryAdapter, CouponPersistenceMapper])
-class CouponJpaRepositoryAdapterIT extends Specification {
+class CouponJpaRepositoryAdapterIT extends IntegrationTestSpecification {
 
     private static final Instant CREATION_DATE = Instant.parse("2026-11-19T10:15:30.123456Z")
     private static final String CODE = "WINTER2026"

@@ -14,14 +14,14 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest
 import org.springframework.context.annotation.Import
 import org.springframework.dao.DataIntegrityViolationException
-import spock.lang.Specification
+import dev.ldworski.couponservice.IntegrationTestSpecification
 
 import java.time.Instant
 
 @DataJpaTest
 @Import([TestcontainersConfiguration, CouponRedemptionJpaRepositoryAdapter, CouponRedemptionPersistenceMapper,
         CouponJpaRepositoryAdapter, CouponPersistenceMapper])
-class CouponRedemptionJpaRepositoryAdapterIT extends Specification {
+class CouponRedemptionJpaRepositoryAdapterIT extends IntegrationTestSpecification {
 
     private static final Instant REDEMPTION_DATE = Instant.parse("2026-11-20T10:15:30.123456Z")
     private static final UserId USER_ID = new UserId(UUID.randomUUID())

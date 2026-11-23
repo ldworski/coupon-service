@@ -85,9 +85,9 @@ class CouponSpec extends Specification {
         exception.code == COUPON_DEFINITION.code()
     }
 
-    def "should pass validation for redemption when country matches and #currentUsages usages are below limit"() {
+    def "should pass usage limit validation when #currentUsages usages are below limit"() {
         when:
-        new Coupon(ID, COUPON_DEFINITION, currentUsages, NOW).validateForRedemption(CountryCode.PL)
+        new Coupon(ID, COUPON_DEFINITION, currentUsages, NOW).validateUsageLimitNotReached()
 
         then:
         noExceptionThrown()
@@ -96,30 +96,30 @@ class CouponSpec extends Specification {
         currentUsages << [0, 99]
     }
 
-    def "should fail validation for redemption when coupon is defined for other country"() {
+    def "should fail usage limit validation when usage limit is reached"() {
         when:
-        new Coupon(ID, COUPON_DEFINITION, 0, NOW).validateForRedemption(CountryCode.DE)
-
-        then:
-        def exception = thrown(CouponNotAvailableInLocationException)
-        exception.code == COUPON_DEFINITION.code()
-    }
-
-    def "should fail validation for redemption when usage limit is reached"() {
-        when:
-        new Coupon(ID, COUPON_DEFINITION, 100, NOW).validateForRedemption(CountryCode.PL)
+        new Coupon(ID, COUPON_DEFINITION, 100, NOW).validateUsageLimitNotReached()
 
         then:
         def exception = thrown(CouponUsageLimitReachedException)
         exception.code == COUPON_DEFINITION.code()
     }
 
-    def "should report country mismatch before usage limit when both fail validation for redemption"() {
+    def "should pass availability validation when coupon is defined for given country"() {
         when:
-        new Coupon(ID, COUPON_DEFINITION, 100, NOW).validateForRedemption(CountryCode.DE)
+        new Coupon(ID, COUPON_DEFINITION, 0, NOW).validateAvailableIn(CountryCode.PL)
 
         then:
-        thrown(CouponNotAvailableInLocationException)
+        noExceptionThrown()
+    }
+
+    def "should fail availability validation when coupon is defined for other country"() {
+        when:
+        new Coupon(ID, COUPON_DEFINITION, 0, NOW).validateAvailableIn(CountryCode.DE)
+
+        then:
+        def exception = thrown(CouponNotAvailableInLocationException)
+        exception.code == COUPON_DEFINITION.code()
     }
 
     def "should reject null #field"() {

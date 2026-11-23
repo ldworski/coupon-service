@@ -29,19 +29,19 @@ public class Coupon {
     }
 
     public Coupon tryToRedeem() {
-        if (isUsageLimitReached()) {
-            throw new CouponUsageLimitReachedException(couponDefinition.code());
-        }
+        validateUsageLimitNotReached();
         return new Coupon(id, couponDefinition, currentUsages + 1, creationDate);
     }
 
-    public void validateForRedemption(CountryCode countryCode) {
-        if (getCouponDefinition().countryCode() != countryCode) {
-            throw new CouponNotAvailableInLocationException(
-                    getCouponDefinition().code());
-        }
+    public void validateUsageLimitNotReached() {
         if (isUsageLimitReached()) {
-            throw new CouponUsageLimitReachedException(getCouponDefinition().code());
+            throw new CouponUsageLimitReachedException(couponDefinition.code());
+        }
+    }
+
+    public void validateAvailableIn(CountryCode countryCode) {
+        if (couponDefinition.countryCode() != countryCode) {
+            throw new CouponNotAvailableInLocationException(couponDefinition.code());
         }
     }
 

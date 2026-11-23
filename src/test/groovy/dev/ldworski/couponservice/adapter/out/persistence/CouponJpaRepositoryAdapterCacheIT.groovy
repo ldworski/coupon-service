@@ -14,14 +14,14 @@ import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest
 import org.springframework.cache.Cache
 import org.springframework.cache.CacheManager
 import org.springframework.context.annotation.Import
-import spock.lang.Specification
+import dev.ldworski.couponservice.IntegrationTestSpecification
 
 import java.time.Instant
 
 @DataJpaTest
 @Import([TestcontainersConfiguration, CouponJpaRepositoryAdapter, CouponPersistenceMapper, CacheConfiguration])
 @ImportAutoConfiguration(CacheAutoConfiguration)
-class CouponJpaRepositoryAdapterCacheIT extends Specification {
+class CouponJpaRepositoryAdapterCacheIT extends IntegrationTestSpecification {
 
     private static final CouponCode CODE = new CouponCode("WINTER2026")
 

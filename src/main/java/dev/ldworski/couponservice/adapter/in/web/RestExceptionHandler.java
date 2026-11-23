@@ -1,5 +1,6 @@
 package dev.ldworski.couponservice.adapter.in.web;
 
+import dev.ldworski.couponservice.domain.exception.CountryIdentificationUnavailableException;
 import dev.ldworski.couponservice.domain.exception.CouponAlreadyRedeemedException;
 import dev.ldworski.couponservice.domain.exception.CouponCodeAlreadyExistsException;
 import dev.ldworski.couponservice.domain.exception.CouponNotAvailableInLocationException;
@@ -107,6 +108,18 @@ class RestExceptionHandler {
         var problemDetail = ProblemDetail.forStatusAndDetail(
                 HttpStatus.SERVICE_UNAVAILABLE, "Resource is temporarily locked, try again later");
         problemDetail.setTitle("Resource temporarily unavailable");
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                .header(HttpHeaders.RETRY_AFTER, RETRY_AFTER_SECONDS)
+                .body(problemDetail);
+    }
+
+    @ExceptionHandler(CountryIdentificationUnavailableException.class)
+    ResponseEntity<ProblemDetail> handleCountryIdentificationUnavailable(
+            CountryIdentificationUnavailableException exception) {
+        log.warn("Country identification failed", exception);
+        var problemDetail = ProblemDetail.forStatusAndDetail(
+                HttpStatus.SERVICE_UNAVAILABLE, "Unable to identify user's location, try again later");
+        problemDetail.setTitle("Location service unavailable");
         return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
                 .header(HttpHeaders.RETRY_AFTER, RETRY_AFTER_SECONDS)
                 .body(problemDetail);

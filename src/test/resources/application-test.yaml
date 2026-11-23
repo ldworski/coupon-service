@@ -1,0 +1,6 @@
+coupon-service:
+  free-ip-api:
+    retry:
+      delay: 10ms
+      jitter: 5ms
+      max-delay: 100ms

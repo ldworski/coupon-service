@@ -12,7 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest
 import org.springframework.http.MediaType
 import org.springframework.test.web.servlet.MockMvc
-import spock.lang.Specification
+import dev.ldworski.couponservice.IntegrationTestSpecification
 
 import static org.hamcrest.Matchers.everyItem
 import static org.hamcrest.Matchers.hasSize
@@ -24,7 +24,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 
 @WebMvcTest(CouponsController)
-class CouponsControllerIT extends Specification {
+class CouponsControllerIT extends IntegrationTestSpecification {
 
     private static final CouponId COUPON_ID = new CouponId(UUID.fromString("0f8fad5b-d9cb-469f-a165-70867728950e"))
     private static final int MAX_ALLOWED_USAGES = 100

@@ -9,7 +9,7 @@ import org.springframework.validation.annotation.Validated;
 
 @Validated
 @ConfigurationProperties("coupon-service.free-ip-api")
-public record FreeIpApiProperties(
+record FreeIpApiProperties(
         @NotBlank String baseUrl,
         @NotNull Duration connectTimeout,
         @NotNull Duration readTimeout,

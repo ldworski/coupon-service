@@ -17,7 +17,6 @@ import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.test.context.DynamicPropertyRegistry
 import org.springframework.test.context.DynamicPropertySource
 import org.springframework.test.web.servlet.client.RestTestClient
-import spock.lang.Specification
 
 import java.nio.charset.StandardCharsets
 import java.util.concurrent.Callable
@@ -27,7 +26,7 @@ import java.util.concurrent.TimeUnit
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Import(TestcontainersConfiguration)
-class RedeemCouponEndToEndIT extends Specification {
+class RedeemCouponEndToEndIT extends IntegrationTestSpecification {
 
     private static final String POLISH_IP = "83.0.0.1"
 

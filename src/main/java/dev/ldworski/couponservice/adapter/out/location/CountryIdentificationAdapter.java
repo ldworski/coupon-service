@@ -2,6 +2,7 @@ package dev.ldworski.couponservice.adapter.out.location;
 
 import static dev.ldworski.couponservice.configuration.CacheConfiguration.IP_COUNTRIES_CACHE;
 
+import dev.ldworski.couponservice.domain.exception.CountryIdentificationUnavailableException;
 import dev.ldworski.couponservice.domain.model.CountryCode;
 import dev.ldworski.couponservice.domain.model.IpAddress;
 import dev.ldworski.couponservice.domain.port.out.CountryIdentificationPort;
@@ -35,7 +36,6 @@ public class CountryIdentificationAdapter implements CountryIdentificationPort {
                         .build())
                 .retrieve()
                 .body(FreeIpApiResponse.class));
-        // TODO jeśli błąd komunikacyjny lub jakikolwiek zwiazany z REST to opakuj w try catch
 
         return Optional.ofNullable(response).map(FreeIpApiResponse::countryCode).flatMap(this::toCountryCode);
     }
@@ -44,11 +44,7 @@ public class CountryIdentificationAdapter implements CountryIdentificationPort {
         try {
             return freeIpApiRetryTemplate.execute(call);
         } catch (RetryException exception) {
-            // TODO opakuj w wyjątek domenowy
-            if (exception.getCause() instanceof RuntimeException lastFailure) {
-                throw lastFailure;
-            }
-            throw new IllegalStateException("Free IP API call failed", exception.getCause());
+            throw new CountryIdentificationUnavailableException(exception.getCause());
         }
     }
 
