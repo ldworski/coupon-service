@@ -3,7 +3,6 @@ package dev.ldworski.couponservice.adapter.in.web;
 import dev.ldworski.couponservice.adapter.in.web.dto.RegisterCouponRequest;
 import dev.ldworski.couponservice.adapter.in.web.dto.RegisterCouponResponse;
 import dev.ldworski.couponservice.domain.model.CouponCode;
-import dev.ldworski.couponservice.domain.model.CouponDefinition;
 import dev.ldworski.couponservice.domain.port.in.RegisterCouponUseCase;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -28,10 +27,10 @@ public class CouponsController implements CouponsApi {
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<RegisterCouponResponse> registerCoupon(
             @Valid @RequestBody RegisterCouponRequest registerCouponRequest) {
-        var registerCouponCommand = new RegisterCouponUseCase.RegisterCouponCodeCommand(new CouponDefinition(
+        var registerCouponCommand = new RegisterCouponUseCase.RegisterCouponCodeCommand(
                 new CouponCode(registerCouponRequest.code()),
-                registerCouponRequest.maxUsagesAllowed(),
-                registerCouponRequest.countryCode()));
+                registerCouponRequest.countryCode(),
+                registerCouponRequest.maxUsagesAllowed());
         var registerCouponId = registerCouponUseCase.registerCoupon(registerCouponCommand);
         return ResponseEntity.status(HttpStatus.CREATED).body(new RegisterCouponResponse(registerCouponId.value()));
     }

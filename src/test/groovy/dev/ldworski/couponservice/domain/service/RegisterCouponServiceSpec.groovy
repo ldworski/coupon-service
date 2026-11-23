@@ -3,8 +3,8 @@ package dev.ldworski.couponservice.domain.service
 import dev.ldworski.couponservice.domain.model.CountryCode
 import dev.ldworski.couponservice.domain.model.Coupon
 import dev.ldworski.couponservice.domain.model.CouponCode
-import dev.ldworski.couponservice.domain.model.CouponDefinition
 import dev.ldworski.couponservice.domain.model.CouponId
+import dev.ldworski.couponservice.domain.model.CouponUsage
 import dev.ldworski.couponservice.domain.port.in.RegisterCouponUseCase.RegisterCouponCodeCommand
 import dev.ldworski.couponservice.domain.port.out.CouponRepositoryPort
 import spock.lang.Specification
@@ -20,24 +20,25 @@ class RegisterCouponServiceSpec extends Specification {
     private static final String CODE = "WINTER2026"
     private static final int MAX_ALLOWED_USAGE = 100
     private static final CountryCode COUNTRY_CODE = CountryCode.PL
-    private static final CouponDefinition COUPON_DEFINITION =
-            new CouponDefinition(new CouponCode(CODE), MAX_ALLOWED_USAGE, COUNTRY_CODE)
+    private static final RegisterCouponCodeCommand COMMAND =
+            new RegisterCouponCodeCommand(new CouponCode(CODE), COUNTRY_CODE, MAX_ALLOWED_USAGE)
 
     CouponRepositoryPort couponRepositoryPort = Mock()
 
     @Subject
     RegisterCouponService service = new RegisterCouponService(couponRepositoryPort, Clock.fixed(NOW, ZoneOffset.UTC))
 
-    def "should register new coupon with given definition and current time"() {
+    def "should register new coupon with given values and current time"() {
         when:
-        CouponId couponId = service.registerCoupon(new RegisterCouponCodeCommand(COUPON_DEFINITION))
+        CouponId couponId = service.registerCoupon(COMMAND)
 
         then:
         couponId != null
         1 * couponRepositoryPort.registerCoupon(_) >> { Coupon coupon ->
             assert coupon != null
-            assert coupon.couponDefinition == COUPON_DEFINITION
-            assert coupon.currentUsages == 0
+            assert coupon.code == new CouponCode(CODE)
+            assert coupon.countryCode == COUNTRY_CODE
+            assert coupon.usage == new CouponUsage(0, MAX_ALLOWED_USAGE)
             assert coupon.creationDate == NOW
             return coupon
         }
@@ -45,11 +46,11 @@ class RegisterCouponServiceSpec extends Specification {
 
     def "should return id of registered coupon"() {
         given:
-        def registeredCoupon = new Coupon(CouponId.newCouponId(), COUPON_DEFINITION, 0, NOW)
+        def registeredCoupon = Coupon.newCoupon(new CouponCode(CODE), COUNTRY_CODE, MAX_ALLOWED_USAGE, NOW)
         couponRepositoryPort.registerCoupon(_ as Coupon) >> registeredCoupon
 
         when:
-        def id = service.registerCoupon(new RegisterCouponCodeCommand(COUPON_DEFINITION))
+        def id = service.registerCoupon(COMMAND)
 
         then:
         id == registeredCoupon.id
@@ -61,7 +62,7 @@ class RegisterCouponServiceSpec extends Specification {
         couponRepositoryPort.registerCoupon(_ as Coupon) >> { throw failure }
 
         when:
-        service.registerCoupon(new RegisterCouponCodeCommand(COUPON_DEFINITION))
+        service.registerCoupon(COMMAND)
 
         then:
         def thrownException = thrown(IllegalStateException)

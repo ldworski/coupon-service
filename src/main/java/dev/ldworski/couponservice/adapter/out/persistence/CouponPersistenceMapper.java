@@ -2,8 +2,8 @@ package dev.ldworski.couponservice.adapter.out.persistence;
 
 import dev.ldworski.couponservice.domain.model.Coupon;
 import dev.ldworski.couponservice.domain.model.CouponCode;
-import dev.ldworski.couponservice.domain.model.CouponDefinition;
 import dev.ldworski.couponservice.domain.model.CouponId;
+import dev.ldworski.couponservice.domain.model.CouponUsage;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -12,21 +12,19 @@ public class CouponPersistenceMapper {
     public Coupon from(CouponEntity couponEntity) {
         return new Coupon(
                 new CouponId(couponEntity.getId()),
-                new CouponDefinition(
-                        new CouponCode(couponEntity.getCode()),
-                        couponEntity.getMaxAllowedUsage(),
-                        couponEntity.getCountryCode()),
-                couponEntity.getCurrentUsage(),
+                new CouponCode(couponEntity.getCode()),
+                couponEntity.getCountryCode(),
+                new CouponUsage(couponEntity.getCurrentUsage(), couponEntity.getMaxAllowedUsage()),
                 couponEntity.getCreated());
     }
 
     public CouponEntity from(Coupon coupon) {
         return new CouponEntity(
                 coupon.getId().value(),
-                coupon.getCouponDefinition().code().value(),
-                coupon.getCouponDefinition().maxAllowedUsage(),
-                coupon.getCurrentUsages(),
-                coupon.getCouponDefinition().countryCode(),
+                coupon.getCode().value(),
+                coupon.getUsage().maxAllowed(),
+                coupon.getUsage().current(),
+                coupon.getCountryCode(),
                 coupon.getCreationDate());
     }
 }

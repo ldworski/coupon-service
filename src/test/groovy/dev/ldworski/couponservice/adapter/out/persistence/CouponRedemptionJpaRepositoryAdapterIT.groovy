@@ -5,7 +5,6 @@ import dev.ldworski.couponservice.domain.exception.CouponAlreadyRedeemedExceptio
 import dev.ldworski.couponservice.domain.model.CountryCode
 import dev.ldworski.couponservice.domain.model.Coupon
 import dev.ldworski.couponservice.domain.model.CouponCode
-import dev.ldworski.couponservice.domain.model.CouponDefinition
 import dev.ldworski.couponservice.domain.model.CouponId
 import dev.ldworski.couponservice.domain.model.CouponRedemption
 import dev.ldworski.couponservice.domain.model.UserId
@@ -103,6 +102,6 @@ class CouponRedemptionJpaRepositoryAdapterIT extends IntegrationTestSpecificatio
 
     private Coupon registeredCoupon(String code) {
         couponAdapter.registerCoupon(
-                Coupon.newCoupon(new CouponDefinition(new CouponCode(code), 100, CountryCode.PL), Instant.now()))
+                Coupon.newCoupon(new CouponCode(code), CountryCode.PL, 100, Instant.now()))
     }
 }

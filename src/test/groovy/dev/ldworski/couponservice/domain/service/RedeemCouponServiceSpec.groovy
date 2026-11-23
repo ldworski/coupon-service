@@ -7,9 +7,9 @@ import dev.ldworski.couponservice.domain.exception.CouponUsageLimitReachedExcept
 import dev.ldworski.couponservice.domain.model.CountryCode
 import dev.ldworski.couponservice.domain.model.Coupon
 import dev.ldworski.couponservice.domain.model.CouponCode
-import dev.ldworski.couponservice.domain.model.CouponDefinition
 import dev.ldworski.couponservice.domain.model.CouponId
 import dev.ldworski.couponservice.domain.model.CouponRedemption
+import dev.ldworski.couponservice.domain.model.CouponUsage
 import dev.ldworski.couponservice.domain.model.IpAddress
 import dev.ldworski.couponservice.domain.model.UserId
 import dev.ldworski.couponservice.domain.port.in.RedeemCouponUseCase.RedeemCouponCommand
@@ -31,8 +31,9 @@ class RedeemCouponServiceSpec extends Specification {
     private static final UserId USER_ID = new UserId(UUID.fromString("3fa85f64-5717-4562-b3fc-2c963f66afa6"))
     private static final IpAddress IP_ADDRESS = new IpAddress("83.0.0.1")
     private static final Coupon COUPON = new Coupon(
-            CouponId.newCouponId(), new CouponDefinition(CODE, 10, CountryCode.PL), 0, Instant.parse("2026-11-01T00:00:00Z"))
-    private static final Coupon EXHAUSTED_COUPON = new Coupon(COUPON.id, COUPON.couponDefinition, 10, COUPON.creationDate)
+            CouponId.newCouponId(), CODE, CountryCode.PL, new CouponUsage(0, 10), Instant.parse("2026-11-01T00:00:00Z"))
+    private static final Coupon EXHAUSTED_COUPON =
+            new Coupon(COUPON.id, CODE, CountryCode.PL, new CouponUsage(10, 10), COUPON.creationDate)
     private static final RedeemCouponCommand COMMAND = new RedeemCouponCommand(CODE, USER_ID, IP_ADDRESS)
 
     CountryIdentificationPort countryIdentificationPort = Mock()
@@ -65,7 +66,7 @@ class RedeemCouponServiceSpec extends Specification {
         1 * couponRepositoryPort.findByCodeForUpdate(CODE) >> Optional.of(COUPON)
 
         then:
-        1 * couponRepositoryPort.updateUsage({ Coupon coupon -> coupon.id == COUPON.id && coupon.currentUsages == 1 })
+        1 * couponRepositoryPort.updateUsage({ Coupon coupon -> coupon.id == COUPON.id && coupon.usage.current() == 1 })
 
         then:
         1 * couponRedemptionRepositoryPort.registerRedemption(new CouponRedemption(COUPON.id, USER_ID, NOW))

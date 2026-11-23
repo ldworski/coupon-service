@@ -9,85 +9,50 @@ import java.time.Instant
 class CouponSpec extends Specification {
 
     private static final CouponId ID = new CouponId(UUID.fromString("0f8fad5b-d9cb-469f-a165-70867728950e"))
+    private static final CouponCode CODE = new CouponCode("WINTER2026")
+    private static final CountryCode COUNTRY_CODE = CountryCode.PL
     private static final Instant NOW = Instant.parse("2026-11-19T18:15:30Z")
-    private static final CouponDefinition COUPON_DEFINITION =
-            new CouponDefinition(new CouponCode("WINTER2026"), 100, CountryCode.PL)
 
     def "should create coupon with given values"() {
         when:
-        def coupon = new Coupon(ID, COUPON_DEFINITION, 5, NOW)
+        def coupon = new Coupon(ID, CODE, COUNTRY_CODE, new CouponUsage(5, 100), NOW)
 
         then:
         coupon.id == ID
-        coupon.couponDefinition == COUPON_DEFINITION
-        coupon.currentUsages == 5
+        coupon.code == CODE
+        coupon.countryCode == COUNTRY_CODE
+        coupon.usage == new CouponUsage(5, 100)
         coupon.creationDate == NOW
-    }
-
-    def "should allow zero current usages"() {
-        when:
-        def coupon = new Coupon(ID, COUPON_DEFINITION, 0, NOW)
-
-        then:
-        coupon.currentUsages == 0
-    }
-
-    def "should reject negative current usages"() {
-        when:
-        new Coupon(ID, COUPON_DEFINITION, -1, NOW)
-
-        then:
-        def exception = thrown(IllegalArgumentException)
-        exception.message == "current usages cannot be negative"
-    }
-
-    def "should reject current usages exceeding max allowed usage"() {
-        when:
-        new Coupon(ID, COUPON_DEFINITION, 101, NOW)
-
-        then:
-        def exception = thrown(IllegalArgumentException)
-        exception.message == "current usages cannot exceed max allowed usage"
-    }
-
-    def "should allow current usages equal to max allowed usage"() {
-        when:
-        def coupon = new Coupon(ID, COUPON_DEFINITION, 100, NOW)
-
-        then:
-        coupon.currentUsages == 100
     }
 
     def "should return coupon with incremented usages when redeemed"() {
         given:
-        def coupon = new Coupon(ID, COUPON_DEFINITION, 99, NOW)
+        def coupon = couponWithUsages(99)
 
         when:
         def redeemed = coupon.tryToRedeem()
 
         then:
-        redeemed.currentUsages == 100
+        redeemed.usage == new CouponUsage(100, 100)
         redeemed.id == ID
-        redeemed.couponDefinition == COUPON_DEFINITION
+        redeemed.code == CODE
+        redeemed.countryCode == COUNTRY_CODE
         redeemed.creationDate == NOW
-        coupon.currentUsages == 99
+        coupon.usage == new CouponUsage(99, 100)
     }
 
     def "should not redeem coupon when usage limit is reached"() {
-        given:
-        def coupon = new Coupon(ID, COUPON_DEFINITION, 100, NOW)
-
         when:
-        coupon.tryToRedeem()
+        couponWithUsages(100).tryToRedeem()
 
         then:
         def exception = thrown(CouponUsageLimitReachedException)
-        exception.code == COUPON_DEFINITION.code()
+        exception.code == CODE
     }
 
     def "should pass usage limit validation when #currentUsages usages are below limit"() {
         when:
-        new Coupon(ID, COUPON_DEFINITION, currentUsages, NOW).validateUsageLimitNotReached()
+        couponWithUsages(currentUsages).validateUsageLimitNotReached()
 
         then:
         noExceptionThrown()
@@ -98,16 +63,26 @@ class CouponSpec extends Specification {
 
     def "should fail usage limit validation when usage limit is reached"() {
         when:
-        new Coupon(ID, COUPON_DEFINITION, 100, NOW).validateUsageLimitNotReached()
+        couponWithUsages(100).validateUsageLimitNotReached()
 
         then:
         def exception = thrown(CouponUsageLimitReachedException)
-        exception.code == COUPON_DEFINITION.code()
+        exception.code == CODE
+    }
+
+    def "should report usage limit reached #expected for #currentUsages usages"() {
+        expect:
+        couponWithUsages(currentUsages).usageLimitReached == expected
+
+        where:
+        currentUsages || expected
+        99            || false
+        100           || true
     }
 
     def "should pass availability validation when coupon is defined for given country"() {
         when:
-        new Coupon(ID, COUPON_DEFINITION, 0, NOW).validateAvailableIn(CountryCode.PL)
+        couponWithUsages(0).validateAvailableIn(CountryCode.PL)
 
         then:
         noExceptionThrown()
@@ -115,59 +90,60 @@ class CouponSpec extends Specification {
 
     def "should fail availability validation when coupon is defined for other country"() {
         when:
-        new Coupon(ID, COUPON_DEFINITION, 0, NOW).validateAvailableIn(CountryCode.DE)
+        couponWithUsages(0).validateAvailableIn(CountryCode.DE)
 
         then:
         def exception = thrown(CouponNotAvailableInLocationException)
-        exception.code == COUPON_DEFINITION.code()
+        exception.code == CODE
     }
 
     def "should reject null #field"() {
         when:
-        new Coupon(id, couponDefinition, 0, creationDate)
+        new Coupon(id, code, countryCode, usage, creationDate)
 
         then:
         def exception = thrown(NullPointerException)
         exception.message == "${field} must not be null"
 
         where:
-        field              | id   | couponDefinition  | creationDate
-        "id"               | null | COUPON_DEFINITION | NOW
-        "couponDefinition" | ID   | null              | NOW
-        "creationDate"     | ID   | COUPON_DEFINITION | null
+        field          | id   | code | countryCode  | usage                 | creationDate
+        "id"           | null | CODE | COUNTRY_CODE | new CouponUsage(0, 1) | NOW
+        "code"         | ID   | null | COUNTRY_CODE | new CouponUsage(0, 1) | NOW
+        "countryCode"  | ID   | CODE | null         | new CouponUsage(0, 1) | NOW
+        "usage"        | ID   | CODE | COUNTRY_CODE | null                  | NOW
+        "creationDate" | ID   | CODE | COUNTRY_CODE | new CouponUsage(0, 1) | null
     }
 
     def "should create new coupon with random id and zero usages"() {
         when:
-        def coupon = Coupon.newCoupon(COUPON_DEFINITION, NOW)
+        def coupon = Coupon.newCoupon(CODE, COUNTRY_CODE, 100, NOW)
 
         then:
         coupon.id != null
-        coupon.couponDefinition == COUPON_DEFINITION
-        coupon.currentUsages == 0
+        coupon.code == CODE
+        coupon.countryCode == COUNTRY_CODE
+        coupon.usage == new CouponUsage(0, 100)
         coupon.creationDate == NOW
     }
 
     def "should generate different ids for new coupons"() {
         when:
-        def first = Coupon.newCoupon(COUPON_DEFINITION, NOW)
-        def second = Coupon.newCoupon(COUPON_DEFINITION, NOW)
+        def first = Coupon.newCoupon(CODE, COUNTRY_CODE, 100, NOW)
+        def second = Coupon.newCoupon(CODE, COUNTRY_CODE, 100, NOW)
 
         then:
         first.id != second.id
     }
 
-    def "should reject null #field when creating new coupon"() {
+    def "should reject invalid max allowed usage when creating new coupon"() {
         when:
-        Coupon.newCoupon(couponDefinition, creationDate)
+        Coupon.newCoupon(CODE, COUNTRY_CODE, 0, NOW)
 
         then:
-        def exception = thrown(NullPointerException)
-        exception.message == "${field} must not be null"
+        thrown(IllegalArgumentException)
+    }
 
-        where:
-        field              | couponDefinition  | creationDate
-        "couponDefinition" | null              | NOW
-        "creationDate"     | COUPON_DEFINITION | null
+    private static Coupon couponWithUsages(int currentUsages) {
+        new Coupon(ID, CODE, COUNTRY_CODE, new CouponUsage(currentUsages, 100), NOW)
     }
 }

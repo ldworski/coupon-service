@@ -19,7 +19,7 @@ public class RegisterCouponService implements RegisterCouponUseCase {
 
     @Override
     public CouponId registerCoupon(RegisterCouponCodeCommand command) {
-        var newCoupon = newCoupon(command.couponDefinition(), clock.instant());
+        var newCoupon = newCoupon(command.code(), command.countryCode(), command.maxAllowedUsage(), clock.instant());
         return couponRepositoryPort.registerCoupon(newCoupon).getId();
     }
 }

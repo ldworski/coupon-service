@@ -1,5 +1,6 @@
 package dev.ldworski.couponservice.configuration;
 
+import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import java.util.List;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -8,7 +9,6 @@ import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.cache.caffeine.CaffeineCacheManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import com.github.benmanes.caffeine.cache.Cache;
 
 @Configuration
 @EnableCaching
@@ -27,8 +27,7 @@ public class CacheConfiguration {
         return cacheManager;
     }
 
-    private Cache<Object, Object> caffeineCache(
-            CacheProperties.CacheSettings properties) {
+    private Cache<Object, Object> caffeineCache(CacheProperties.CacheSettings properties) {
         return Caffeine.newBuilder()
                 .maximumSize(properties.maximumSize())
                 .expireAfterWrite(properties.expireAfterWrite())

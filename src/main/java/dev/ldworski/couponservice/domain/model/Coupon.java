@@ -7,58 +7,59 @@ import java.util.Objects;
 
 public class Coupon {
     private final CouponId id;
-    private final CouponDefinition couponDefinition;
-    private final int currentUsages;
+    private final CouponCode code;
+    private final CountryCode countryCode;
+    private final CouponUsage usage;
     private final Instant creationDate;
 
-    public Coupon(CouponId id, CouponDefinition couponDefinition, int currentUsages, Instant creationDate) {
+    public Coupon(CouponId id, CouponCode code, CountryCode countryCode, CouponUsage usage, Instant creationDate) {
         this.id = Objects.requireNonNull(id, "id must not be null");
-        this.couponDefinition = Objects.requireNonNull(couponDefinition, "couponDefinition must not be null");
-        if (currentUsages < 0) {
-            throw new IllegalArgumentException("current usages cannot be negative");
-        }
-        if (currentUsages > couponDefinition.maxAllowedUsage()) {
-            throw new IllegalArgumentException("current usages cannot exceed max allowed usage");
-        }
-        this.currentUsages = currentUsages;
+        this.code = Objects.requireNonNull(code, "code must not be null");
+        this.countryCode = Objects.requireNonNull(countryCode, "countryCode must not be null");
+        this.usage = Objects.requireNonNull(usage, "usage must not be null");
         this.creationDate = Objects.requireNonNull(creationDate, "creationDate must not be null");
     }
 
-    public static Coupon newCoupon(CouponDefinition couponDefinition, Instant creationDate) {
-        return new Coupon(CouponId.newCouponId(), couponDefinition, 0, creationDate);
+    public static Coupon newCoupon(
+            CouponCode code, CountryCode countryCode, int maxAllowedUsage, Instant creationDate) {
+        return new Coupon(CouponId.newCouponId(), code, countryCode, CouponUsage.unused(maxAllowedUsage), creationDate);
     }
 
     public Coupon tryToRedeem() {
         validateUsageLimitNotReached();
-        return new Coupon(id, couponDefinition, currentUsages + 1, creationDate);
+        return new Coupon(id, code, countryCode, usage.incremented(), creationDate);
     }
 
     public void validateUsageLimitNotReached() {
         if (isUsageLimitReached()) {
-            throw new CouponUsageLimitReachedException(couponDefinition.code());
+            throw new CouponUsageLimitReachedException(code);
         }
     }
 
     public void validateAvailableIn(CountryCode countryCode) {
-        if (couponDefinition.countryCode() != countryCode) {
-            throw new CouponNotAvailableInLocationException(couponDefinition.code());
+        if (this.countryCode != countryCode) {
+            throw new CouponNotAvailableInLocationException(code);
         }
     }
 
     public boolean isUsageLimitReached() {
-        return currentUsages >= couponDefinition.maxAllowedUsage();
+        return usage.isLimitReached();
     }
 
     public CouponId getId() {
         return id;
     }
 
-    public CouponDefinition getCouponDefinition() {
-        return couponDefinition;
+    public CouponCode getCode() {
+        return code;
     }
 
-    public int getCurrentUsages() {
-        return currentUsages;
+    public CountryCode getCountryCode() {
+        return countryCode;
+    }
+
+    public CouponUsage getUsage() {
+        return usage;
     }
 
     public Instant getCreationDate() {

@@ -5,7 +5,6 @@ import dev.ldworski.couponservice.configuration.TestcontainersConfiguration
 import dev.ldworski.couponservice.domain.model.CountryCode
 import dev.ldworski.couponservice.domain.model.Coupon
 import dev.ldworski.couponservice.domain.model.CouponCode
-import dev.ldworski.couponservice.domain.model.CouponDefinition
 import dev.ldworski.couponservice.domain.port.out.CouponRepositoryPort
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.autoconfigure.ImportAutoConfiguration
@@ -86,6 +85,6 @@ class CouponJpaRepositoryAdapterCacheIT extends IntegrationTestSpecification {
     }
 
     private static Coupon newCoupon(int maxAllowedUsage) {
-        Coupon.newCoupon(new CouponDefinition(CODE, maxAllowedUsage, CountryCode.PL), Instant.now())
+        Coupon.newCoupon(CODE, CountryCode.PL, maxAllowedUsage, Instant.now())
     }
 }

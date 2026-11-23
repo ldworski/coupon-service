@@ -3,7 +3,6 @@ package dev.ldworski.couponservice.adapter.in.web
 import dev.ldworski.couponservice.domain.exception.CouponCodeAlreadyExistsException
 import dev.ldworski.couponservice.domain.model.CountryCode
 import dev.ldworski.couponservice.domain.model.CouponCode
-import dev.ldworski.couponservice.domain.model.CouponDefinition
 import dev.ldworski.couponservice.domain.model.CouponId
 import dev.ldworski.couponservice.domain.port.in.RegisterCouponUseCase
 import dev.ldworski.couponservice.domain.port.in.RegisterCouponUseCase.RegisterCouponCodeCommand
@@ -47,8 +46,8 @@ class CouponsControllerIT extends IntegrationTestSpecification {
                      """))
 
         then:
-        1 * registerCouponUseCase.registerCoupon(new RegisterCouponCodeCommand(
-                new CouponDefinition(new CouponCode("WINTER2026"), MAX_ALLOWED_USAGES, COUNTRY_CODE))) >> COUPON_ID
+        1 * registerCouponUseCase.registerCoupon(
+                new RegisterCouponCodeCommand(new CouponCode("WINTER2026"), COUNTRY_CODE, MAX_ALLOWED_USAGES)) >> COUPON_ID
 
         and:
         result.andExpect(status().isCreated())
@@ -120,7 +119,7 @@ class CouponsControllerIT extends IntegrationTestSpecification {
                 .content("""{"code": "${code}", "maxUsagesAllowed": 100, "countryCode": "PL"}"""))
 
         then:
-        1 * registerCouponUseCase.registerCoupon({ it.couponDefinition().code() == new CouponCode(code) }) >> COUPON_ID
+        1 * registerCouponUseCase.registerCoupon({ it.code() == new CouponCode(code) }) >> COUPON_ID
 
         and:
         result.andExpect(status().isCreated())
@@ -133,7 +132,7 @@ class CouponsControllerIT extends IntegrationTestSpecification {
                 .content("""{"code": "${code}", "maxUsagesAllowed": 100, "countryCode": "PL"}"""))
 
         then:
-        1 * registerCouponUseCase.registerCoupon({ it.couponDefinition().code() == new CouponCode(code) }) >> COUPON_ID
+        1 * registerCouponUseCase.registerCoupon({ it.code() == new CouponCode(code) }) >> COUPON_ID
 
         and:
         result.andExpect(status().isCreated())

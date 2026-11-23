@@ -9,7 +9,9 @@ import org.springframework.validation.annotation.Validated;
 @Validated
 @ConfigurationProperties("coupon-service.cache")
 public record CacheProperties(
-        @NotNull @Valid CacheSettings ipCountries, @NotNull @Valid CacheSettings exhaustedCoupons) {
+        @NotNull @Valid CacheSettings ipCountries,
+        @NotNull @Valid CacheSettings exhaustedCoupons) {
 
-    public record CacheSettings(@NotNull Long maximumSize, @NotNull Duration expireAfterWrite) {}
+    public record CacheSettings(
+            @NotNull Long maximumSize, @NotNull Duration expireAfterWrite) {}
 }

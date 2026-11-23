@@ -4,7 +4,6 @@ import dev.ldworski.couponservice.configuration.TestcontainersConfiguration
 import dev.ldworski.couponservice.domain.model.CountryCode
 import dev.ldworski.couponservice.domain.model.Coupon
 import dev.ldworski.couponservice.domain.model.CouponCode
-import dev.ldworski.couponservice.domain.model.CouponDefinition
 import dev.ldworski.couponservice.domain.exception.CouponCodeAlreadyExistsException
 import jakarta.persistence.EntityManager
 import org.hibernate.exception.ConstraintViolationException
@@ -42,10 +41,10 @@ class CouponJpaRepositoryAdapterIT extends IntegrationTestSpecification {
 
         then:
         registered.id == coupon.id
-        registered.couponDefinition.code().value() == CODE
-        registered.couponDefinition.maxAllowedUsage() == MAX_ALLOWED_USAGE
-        registered.couponDefinition.countryCode() == COUNTRY_CODE
-        registered.currentUsages == 0
+        registered.code.value() == CODE
+        registered.usage.maxAllowed() == MAX_ALLOWED_USAGE
+        registered.countryCode == COUNTRY_CODE
+        registered.usage.current() == 0
         registered.creationDate == CREATION_DATE
     }
 
@@ -91,8 +90,9 @@ class CouponJpaRepositoryAdapterIT extends IntegrationTestSpecification {
         found.isPresent()
         with(found.get()) {
             id == coupon.id
-            couponDefinition == coupon.couponDefinition
-            currentUsages == 0
+            code == coupon.code
+            countryCode == coupon.countryCode
+            usage == coupon.usage
             creationDate == CREATION_DATE
         }
     }
@@ -202,6 +202,6 @@ class CouponJpaRepositoryAdapterIT extends IntegrationTestSpecification {
     }
 
     private static Coupon coupon(String code) {
-        Coupon.newCoupon(new CouponDefinition(new CouponCode(code), MAX_ALLOWED_USAGE, COUNTRY_CODE), CREATION_DATE)
+        Coupon.newCoupon(new CouponCode(code), COUNTRY_CODE, MAX_ALLOWED_USAGE, CREATION_DATE)
     }
 }

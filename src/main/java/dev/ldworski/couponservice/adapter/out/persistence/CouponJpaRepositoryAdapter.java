@@ -35,8 +35,7 @@ public class CouponJpaRepositoryAdapter implements CouponRepositoryPort {
             switch (exception.getCause()) {
                 case ConstraintViolationException violation
                 when isCouponCodeDuplicated(violation) ->
-                    throw new CouponCodeAlreadyExistsException(
-                            coupon.getCouponDefinition().code(), exception);
+                    throw new CouponCodeAlreadyExistsException(coupon.getCode(), exception);
                 case null, default -> throw exception;
             }
         }
@@ -64,7 +63,7 @@ public class CouponJpaRepositoryAdapter implements CouponRepositoryPort {
     public void updateUsage(Coupon coupon) {
         var couponEntity =
                 couponEntityJpaRepository.findById(coupon.getId().value()).orElseThrow();
-        couponEntity.setCurrentUsage(coupon.getCurrentUsages());
+        couponEntity.setCurrentUsage(coupon.getUsage().current());
         couponEntityJpaRepository.saveAndFlush(couponEntity);
     }
 
