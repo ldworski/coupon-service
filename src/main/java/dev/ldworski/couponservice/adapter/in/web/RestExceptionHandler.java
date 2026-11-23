@@ -9,6 +9,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.PessimisticLockingFailureException;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
@@ -27,6 +29,7 @@ import tools.jackson.databind.exc.MismatchedInputException;
 class RestExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(RestExceptionHandler.class);
+    private static final String RETRY_AFTER_SECONDS = "1";
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     ProblemDetail handleValidationException(MethodArgumentNotValidException exception) {
@@ -96,6 +99,17 @@ class RestExceptionHandler {
         problemDetail.setTitle("Coupon usage limit reached");
         problemDetail.setProperty("code", exception.getCode().value());
         return problemDetail;
+    }
+
+    @ExceptionHandler(PessimisticLockingFailureException.class)
+    ResponseEntity<ProblemDetail> handlePessimisticLockingFailure(PessimisticLockingFailureException exception) {
+        log.info("Lock not acquired in time: {}", exception.getMessage());
+        var problemDetail = ProblemDetail.forStatusAndDetail(
+                HttpStatus.SERVICE_UNAVAILABLE, "Resource is busy, try again later");
+        problemDetail.setTitle("Resource temporarily unavailable");
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                .header(HttpHeaders.RETRY_AFTER, RETRY_AFTER_SECONDS)
+                .body(problemDetail);
     }
 
     @ExceptionHandler(Exception.class)

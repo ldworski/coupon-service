@@ -16,7 +16,6 @@ import org.springframework.web.client.RestClient;
 @EnableConfigurationProperties(FreeIpApiProperties.class)
 class FreeIpApiConfiguration {
 
-    // TODO zmien
     @Bean
     CountryIdentificationPort countryIdentificationPort(FreeIpApiProperties properties) {
         var httpClient = HttpClient.newBuilder()
