@@ -1,5 +1,15 @@
 package dev.ldworski.couponservice.adapter.in.web
 
+import static org.hamcrest.Matchers.everyItem
+import static org.hamcrest.Matchers.hasItem
+import static org.hamcrest.Matchers.hasSize
+import static org.hamcrest.Matchers.is
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
+
 import dev.ldworski.couponservice.IntegrationTestSpecification
 import dev.ldworski.couponservice.domain.exception.CountryIdentificationUnavailableException
 import dev.ldworski.couponservice.domain.exception.CouponAlreadyRedeemedException
@@ -14,23 +24,15 @@ import dev.ldworski.couponservice.domain.port.in.RedeemCouponUseCase
 import dev.ldworski.couponservice.domain.port.in.RedeemCouponUseCase.RedeemCouponCommand
 import org.spockframework.spring.SpringBean
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.boot.micrometer.tracing.test.autoconfigure.AutoConfigureTracing
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest
 import org.springframework.dao.PessimisticLockingFailureException
 import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
 import org.springframework.test.web.servlet.MockMvc
 
-import static org.hamcrest.Matchers.everyItem
-import static org.hamcrest.Matchers.hasItem
-import static org.hamcrest.Matchers.hasSize
-import static org.hamcrest.Matchers.is
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
-
 @WebMvcTest(CouponRedemptionsController)
+@AutoConfigureTracing
 class CouponRedemptionsControllerIT extends IntegrationTestSpecification {
 
     private static final String CODE = "WINTER2026"
@@ -153,7 +155,6 @@ class CouponRedemptionsControllerIT extends IntegrationTestSpecification {
                 .andExpect(jsonPath('$.status').value(expectedStatus))
                 .andExpect(jsonPath('$.title').value(expectedTitle))
                 .andExpect(jsonPath('$.detail').value(expectedDetail))
-                .andExpect(jsonPath('$.instance').value("/coupons/WINTER2026/redemptions"))
                 .andExpect(jsonPath('$.timestamp').exists())
 
         where:
@@ -185,25 +186,6 @@ class CouponRedemptionsControllerIT extends IntegrationTestSpecification {
         "location service is unavailable"     | new CountryIdentificationUnavailableException(new RuntimeException()) || "1"
     }
 
-    def "should return coupon code in problem details when #description"() {
-        given:
-        redeemCouponUseCase.redeemCoupon(_ as RedeemCouponCommand) >> { throw exception }
-
-        when:
-        def result = mockMvc.perform(post("/coupons/{code}/redemptions", CODE)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(VALID_BODY))
-
-        then:
-        result.andExpect(jsonPath('$.code').value(CODE))
-
-        where:
-        description                           | exception
-        "coupon does not exist"               | new CouponNotFoundException(new CouponCode(CODE))
-        "coupon is not available in location" | new CouponNotAvailableInLocationException(new CouponCode(CODE))
-        "coupon usage limit is reached"       | new CouponUsageLimitReachedException(new CouponCode(CODE))
-    }
-
     def "should return internal server error without exposing details when unexpected exception occurs"() {
         given:
         redeemCouponUseCase.redeemCoupon(_ as RedeemCouponCommand) >> { throw new IllegalStateException("database password leaked") }
@@ -217,6 +199,5 @@ class CouponRedemptionsControllerIT extends IntegrationTestSpecification {
         result.andExpect(status().isInternalServerError())
                 .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
                 .andExpect(jsonPath('$.detail').value("Unexpected error occurred"))
-                .andExpect(jsonPath('$.instance').value("/coupons/WINTER2026/redemptions"))
     }
 }

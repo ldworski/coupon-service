@@ -2,9 +2,8 @@ package dev.ldworski.couponservice.domain.model
 
 import dev.ldworski.couponservice.domain.exception.CouponNotAvailableInLocationException
 import dev.ldworski.couponservice.domain.exception.CouponUsageLimitReachedException
-import spock.lang.Specification
-
 import java.time.Instant
+import spock.lang.Specification
 
 class CouponSpec extends Specification {
 
@@ -47,7 +46,7 @@ class CouponSpec extends Specification {
 
         then:
         def exception = thrown(CouponUsageLimitReachedException)
-        exception.code == CODE
+        exception.message == "Coupon with code WINTER2026 has reached its usage limit"
     }
 
     def "should pass usage limit validation when #currentUsages usages are below limit"() {
@@ -67,7 +66,7 @@ class CouponSpec extends Specification {
 
         then:
         def exception = thrown(CouponUsageLimitReachedException)
-        exception.code == CODE
+        exception.message == "Coupon with code WINTER2026 has reached its usage limit"
     }
 
     def "should report usage limit reached #expected for #currentUsages usages"() {
@@ -94,7 +93,7 @@ class CouponSpec extends Specification {
 
         then:
         def exception = thrown(CouponNotAvailableInLocationException)
-        exception.code == CODE
+        exception.message == "Coupon with code WINTER2026 is not available for user's location"
     }
 
     def "should reject null #field"() {

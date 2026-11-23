@@ -7,7 +7,13 @@ import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options
 
 import com.github.tomakehurst.wiremock.WireMockServer
 import dev.ldworski.couponservice.configuration.TestcontainersConfiguration
+import java.nio.charset.StandardCharsets
+import java.util.concurrent.Callable
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.boot.micrometer.tracing.test.autoconfigure.AutoConfigureTracing
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.web.server.LocalServerPort
 import org.springframework.context.annotation.Import
@@ -18,14 +24,9 @@ import org.springframework.test.context.DynamicPropertyRegistry
 import org.springframework.test.context.DynamicPropertySource
 import org.springframework.test.web.servlet.client.RestTestClient
 
-import java.nio.charset.StandardCharsets
-import java.util.concurrent.Callable
-import java.util.concurrent.CountDownLatch
-import java.util.concurrent.Executors
-import java.util.concurrent.TimeUnit
-
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Import(TestcontainersConfiguration)
+@AutoConfigureTracing
 class RedeemCouponEndToEndIT extends IntegrationTestSpecification {
 
     private static final String POLISH_IP = "83.0.0.1"
@@ -113,6 +114,29 @@ class RedeemCouponEndToEndIT extends IntegrationTestSpecification {
         then:
         response.expectStatus().isNotFound()
                 .expectBody().jsonPath('$.title').isEqualTo("Coupon not found")
+    }
+
+    def "should return generated trace id as correlation id in problem details"() {
+        when:
+        def response = redeemCoupon("E2EREDEEMMISSING", UUID.randomUUID())
+
+        then:
+        response.expectStatus().isNotFound()
+                .expectBody().jsonPath('$.correlationId').value(String, { assert it ==~ /[0-9a-f]{32}/ })
+    }
+
+    def "should return trace id from traceparent header as correlation id in problem details"() {
+        when:
+        def response = restTestClient.post()
+                .uri("/coupons/E2EREDEEMMISSING/redemptions")
+                .header("traceparent", "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01")
+                .contentType(MediaType.APPLICATION_JSON)
+                .body("""{"userId": "${UUID.randomUUID()}", "ipAddress": "$POLISH_IP"}""".toString())
+                .exchange()
+
+        then:
+        response.expectStatus().isNotFound()
+                .expectBody().jsonPath('$.correlationId').isEqualTo("4bf92f3577b34da6a3ce929d0e0e4736")
     }
 
     def "should return unprocessable content when coupon is not available in user's location"() {

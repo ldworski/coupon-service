@@ -1,18 +1,17 @@
 package dev.ldworski.couponservice.adapter.out.persistence
 
+import dev.ldworski.couponservice.IntegrationTestSpecification
 import dev.ldworski.couponservice.configuration.TestcontainersConfiguration
+import dev.ldworski.couponservice.domain.exception.CouponCodeAlreadyExistsException
 import dev.ldworski.couponservice.domain.model.CountryCode
 import dev.ldworski.couponservice.domain.model.Coupon
 import dev.ldworski.couponservice.domain.model.CouponCode
-import dev.ldworski.couponservice.domain.exception.CouponCodeAlreadyExistsException
 import jakarta.persistence.EntityManager
+import java.time.Instant
 import org.hibernate.exception.ConstraintViolationException
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest
 import org.springframework.context.annotation.Import
-import dev.ldworski.couponservice.IntegrationTestSpecification
-
-import java.time.Instant
 
 @DataJpaTest
 @Import([TestcontainersConfiguration, CouponJpaRepositoryAdapter, CouponPersistenceMapper])
@@ -75,7 +74,7 @@ class CouponJpaRepositoryAdapterIT extends IntegrationTestSpecification {
 
         then:
         def exception = thrown(CouponCodeAlreadyExistsException)
-        exception.code == new CouponCode(CODE)
+        exception.message == "Coupon with code WINTER2026 already exists"
     }
 
     def "should find coupon by code and country code"() {
@@ -105,8 +104,8 @@ class CouponJpaRepositoryAdapterIT extends IntegrationTestSpecification {
         adapter.findByCodeAndCountryCode(new CouponCode(code), countryCode).isEmpty()
 
         where:
-        description                          | code         | countryCode
-        "code does not exist"                | "SUMMER2026" | COUNTRY_CODE
+        description                           | code         | countryCode
+        "code does not exist"                 | "SUMMER2026" | COUNTRY_CODE
         "coupon is defined for other country" | CODE         | CountryCode.DE
     }
 
@@ -192,12 +191,12 @@ class CouponJpaRepositoryAdapterIT extends IntegrationTestSpecification {
         exception.message.contains("ck_coupon_code_format")
 
         where:
-        description                | code
-        "code is empty"            | ""
-        "code is lower case"       | "winter2026"
-        "code contains whitespace" | "WINTER 2026"
-        "code contains new line"   | "WINTER\n2026"
-        "code contains dash"       | "WINTER-2026"
+        description                   | code
+        "code is empty"               | ""
+        "code is lower case"          | "winter2026"
+        "code contains whitespace"    | "WINTER 2026"
+        "code contains new line"      | "WINTER\n2026"
+        "code contains dash"          | "WINTER-2026"
         "code contains Polish letter" | "ZIMAŚ2026"
     }
 

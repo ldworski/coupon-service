@@ -61,7 +61,9 @@ interface CouponRedemptionsApi {
     @ApiResponse(
             responseCode = "503",
             description =
-                    "Coupon is temporarily unavailable due to a high number of concurrent redemptions or the user's location cannot be identified at the moment; retry after the number of seconds given in the Retry-After header",
+                    "Coupon is temporarily unavailable due to a high number of concurrent redemptions or the user's"
+                            + " location cannot be identified at the moment; retry after the number of seconds given in"
+                            + " the Retry-After header",
             content =
                     @Content(
                             mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,

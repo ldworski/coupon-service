@@ -1,7 +1,15 @@
 package dev.ldworski.couponservice.adapter.out.persistence;
 
 import dev.ldworski.couponservice.domain.model.CountryCode;
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.Id;
+import jakarta.persistence.PostLoad;
+import jakarta.persistence.PostPersist;
+import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
 import java.time.Instant;
 import java.util.UUID;
 import org.springframework.data.domain.Persistable;

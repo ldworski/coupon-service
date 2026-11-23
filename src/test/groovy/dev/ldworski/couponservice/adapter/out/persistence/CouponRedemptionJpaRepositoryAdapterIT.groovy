@@ -1,5 +1,6 @@
 package dev.ldworski.couponservice.adapter.out.persistence
 
+import dev.ldworski.couponservice.IntegrationTestSpecification
 import dev.ldworski.couponservice.configuration.TestcontainersConfiguration
 import dev.ldworski.couponservice.domain.exception.CouponAlreadyRedeemedException
 import dev.ldworski.couponservice.domain.model.CountryCode
@@ -9,13 +10,11 @@ import dev.ldworski.couponservice.domain.model.CouponId
 import dev.ldworski.couponservice.domain.model.CouponRedemption
 import dev.ldworski.couponservice.domain.model.UserId
 import jakarta.persistence.EntityManager
+import java.time.Instant
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest
 import org.springframework.context.annotation.Import
 import org.springframework.dao.DataIntegrityViolationException
-import dev.ldworski.couponservice.IntegrationTestSpecification
-
-import java.time.Instant
 
 @DataJpaTest
 @Import([TestcontainersConfiguration, CouponRedemptionJpaRepositoryAdapter, CouponRedemptionPersistenceMapper,

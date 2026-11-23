@@ -13,6 +13,7 @@ import static com.github.tomakehurst.wiremock.stubbing.Scenario.STARTED
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder
 import com.github.tomakehurst.wiremock.http.Fault
+import dev.ldworski.couponservice.IntegrationTestSpecification
 import dev.ldworski.couponservice.configuration.CacheConfiguration
 import dev.ldworski.couponservice.domain.exception.CountryIdentificationUnavailableException
 import dev.ldworski.couponservice.domain.model.CountryCode
@@ -30,7 +31,6 @@ import org.springframework.test.context.DynamicPropertySource
 import org.springframework.web.client.HttpClientErrorException
 import org.springframework.web.client.HttpServerErrorException
 import org.springframework.web.client.ResourceAccessException
-import dev.ldworski.couponservice.IntegrationTestSpecification
 
 @SpringBootTest(classes = [FreeIpApiConfiguration, CacheConfiguration])
 @ImportAutoConfiguration(CacheAutoConfiguration)
@@ -74,9 +74,9 @@ class CountryIdentificationAdapterIT extends IntegrationTestSpecification {
         requestCount(path) == 1
 
         where:
-        ip             | path                    | response                  || expected
-        "83.0.0.1"     | "83.0.0.1"              | "identified-pl-ipv4.json" || CountryCode.PL
-        "2a02:8108::1" | "2a02:8108::1"          | "identified-de-ipv6.json" || CountryCode.DE
+        ip             | path           | response                  || expected
+        "83.0.0.1"     | "83.0.0.1"     | "identified-pl-ipv4.json" || CountryCode.PL
+        "2a02:8108::1" | "2a02:8108::1" | "identified-de-ipv6.json" || CountryCode.DE
     }
 
     def "should return empty when country is not supported"() {
@@ -162,9 +162,9 @@ class CountryIdentificationAdapterIT extends IntegrationTestSpecification {
         requestCount("83.0.0.1") == 4
 
         where:
-        description          | response                                                || expectedCause
-        "server error"       | serverError()                                           || HttpServerErrorException
-        "connection failure" | aResponse().withFault(Fault.CONNECTION_RESET_BY_PEER)   || ResourceAccessException
+        description          | response                                              || expectedCause
+        "server error"       | serverError()                                         || HttpServerErrorException
+        "connection failure" | aResponse().withFault(Fault.CONNECTION_RESET_BY_PEER) || ResourceAccessException
     }
 
     def "should call Free IP API only once for repeated requests from the same IP"() {

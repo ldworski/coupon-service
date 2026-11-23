@@ -7,12 +7,11 @@ import dev.ldworski.couponservice.domain.model.CouponId
 import dev.ldworski.couponservice.domain.model.CouponUsage
 import dev.ldworski.couponservice.domain.port.in.RegisterCouponUseCase.RegisterCouponCodeCommand
 import dev.ldworski.couponservice.domain.port.out.CouponRepositoryPort
-import spock.lang.Specification
-import spock.lang.Subject
-
 import java.time.Clock
 import java.time.Instant
 import java.time.ZoneOffset
+import spock.lang.Specification
+import spock.lang.Subject
 
 class RegisterCouponServiceSpec extends Specification {
 

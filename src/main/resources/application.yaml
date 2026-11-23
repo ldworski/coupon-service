@@ -18,6 +18,12 @@ spring:
     properties:
       jakarta.persistence.lock.timeout: 3000
 
+management:
+  otlp:
+    metrics:
+      export:
+        enabled: false
+
 coupon-service:
   cache:
     ip-countries:

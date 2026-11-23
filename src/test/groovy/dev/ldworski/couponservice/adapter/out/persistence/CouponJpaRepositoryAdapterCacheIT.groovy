@@ -1,11 +1,13 @@
 package dev.ldworski.couponservice.adapter.out.persistence
 
+import dev.ldworski.couponservice.IntegrationTestSpecification
 import dev.ldworski.couponservice.configuration.CacheConfiguration
 import dev.ldworski.couponservice.configuration.TestcontainersConfiguration
 import dev.ldworski.couponservice.domain.model.CountryCode
 import dev.ldworski.couponservice.domain.model.Coupon
 import dev.ldworski.couponservice.domain.model.CouponCode
 import dev.ldworski.couponservice.domain.port.out.CouponRepositoryPort
+import java.time.Instant
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.autoconfigure.ImportAutoConfiguration
 import org.springframework.boot.cache.autoconfigure.CacheAutoConfiguration
@@ -13,9 +15,6 @@ import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest
 import org.springframework.cache.Cache
 import org.springframework.cache.CacheManager
 import org.springframework.context.annotation.Import
-import dev.ldworski.couponservice.IntegrationTestSpecification
-
-import java.time.Instant
 
 @DataJpaTest
 @Import([TestcontainersConfiguration, CouponJpaRepositoryAdapter, CouponPersistenceMapper, CacheConfiguration])

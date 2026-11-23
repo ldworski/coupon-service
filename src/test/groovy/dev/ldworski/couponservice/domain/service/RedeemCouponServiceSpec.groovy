@@ -17,12 +17,11 @@ import dev.ldworski.couponservice.domain.port.out.CountryIdentificationPort
 import dev.ldworski.couponservice.domain.port.out.CouponRedemptionRepositoryPort
 import dev.ldworski.couponservice.domain.port.out.CouponRepositoryPort
 import dev.ldworski.couponservice.domain.port.out.TransactionPort
-import spock.lang.Specification
-import spock.lang.Subject
-
 import java.time.Clock
 import java.time.Instant
 import java.time.ZoneOffset
+import spock.lang.Specification
+import spock.lang.Subject
 
 class RedeemCouponServiceSpec extends Specification {
 
@@ -81,7 +80,7 @@ class RedeemCouponServiceSpec extends Specification {
 
         then:
         def exception = thrown(CouponNotFoundException)
-        exception.code == CODE
+        exception.message == "Coupon with code WINTER2026 not found"
         0 * countryIdentificationPort._
         0 * transactionPort._
         0 * couponRedemptionRepositoryPort._
@@ -97,7 +96,7 @@ class RedeemCouponServiceSpec extends Specification {
 
         then:
         def exception = thrown(CouponNotAvailableInLocationException)
-        exception.code == CODE
+        exception.message == "Coupon with code WINTER2026 is not available for user's location"
         0 * transactionPort._
         0 * couponRedemptionRepositoryPort._
 
@@ -116,7 +115,7 @@ class RedeemCouponServiceSpec extends Specification {
 
         then:
         def exception = thrown(CouponUsageLimitReachedException)
-        exception.code == CODE
+        exception.message == "Coupon with code WINTER2026 has reached its usage limit"
         0 * countryIdentificationPort._
         0 * transactionPort._
         0 * couponRedemptionRepositoryPort._
@@ -126,7 +125,7 @@ class RedeemCouponServiceSpec extends Specification {
         given:
         countryIdentificationPort.identifyCountry(IP_ADDRESS) >> Optional.of(CountryCode.PL)
         couponRepositoryPort.findByCode(CODE) >> Optional.of(COUPON)
-        transactionPort.inTransaction(_) >> { Runnable operation -> operation.run() }
+        transactionPort.inTransaction(_ as Runnable) >> { Runnable operation -> operation.run() }
         couponRepositoryPort.findByCodeForUpdate(CODE) >> Optional.of(EXHAUSTED_COUPON)
 
         when:
@@ -134,7 +133,7 @@ class RedeemCouponServiceSpec extends Specification {
 
         then:
         def exception = thrown(CouponUsageLimitReachedException)
-        exception.code == CODE
+        exception.message == "Coupon with code WINTER2026 has reached its usage limit"
         0 * couponRepositoryPort.updateUsage(_)
         0 * couponRedemptionRepositoryPort.registerRedemption(_)
     }
@@ -143,10 +142,10 @@ class RedeemCouponServiceSpec extends Specification {
         given:
         countryIdentificationPort.identifyCountry(IP_ADDRESS) >> Optional.of(CountryCode.PL)
         couponRepositoryPort.findByCode(CODE) >> Optional.of(COUPON)
-        transactionPort.inTransaction(_) >> { Runnable operation -> operation.run() }
+        transactionPort.inTransaction(_ as Runnable) >> { Runnable operation -> operation.run() }
         couponRepositoryPort.findByCodeForUpdate(CODE) >> Optional.of(COUPON)
         def alreadyRedeemed = new CouponAlreadyRedeemedException(COUPON.id, USER_ID, null)
-        couponRedemptionRepositoryPort.registerRedemption(_) >> { throw alreadyRedeemed }
+        couponRedemptionRepositoryPort.registerRedemption(_ as CouponRedemption) >> { throw alreadyRedeemed }
 
         when:
         service.redeemCoupon(COMMAND)

@@ -31,6 +31,7 @@ public class CacheConfiguration {
         return Caffeine.newBuilder()
                 .maximumSize(properties.maximumSize())
                 .expireAfterWrite(properties.expireAfterWrite())
+                .recordStats()
                 .build();
     }
 }
