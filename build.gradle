@@ -94,6 +94,28 @@ tasks.named('jacocoTestReport', JacocoReport) {
     }
 }
 
+tasks.named('jacocoTestCoverageVerification', JacocoCoverageVerification) {
+    description = 'Fails the build when code coverage from unit and integration tests is below the threshold.'
+    dependsOn tasks.named('test'), integrationTest
+    executionData.setFrom(fileTree(layout.buildDirectory).include('jacoco/*.exec'))
+    violationRules {
+        rule {
+            limit {
+                counter = 'LINE'
+                minimum = 0.80
+            }
+            limit {
+                counter = 'BRANCH'
+                minimum = 0.80
+            }
+        }
+    }
+}
+
+tasks.named('check') {
+    dependsOn tasks.named('jacocoTestCoverageVerification')
+}
+
 spotless {
     java {
         target 'src/*/java/**/*.java'

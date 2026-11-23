@@ -139,7 +139,7 @@ powiązane wpisy w logach):
 |------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------|
 | `./gradlew test`             | testy jednostkowe (bez klas `*IT`), nie wymagają Dockera                                                                                  |
 | `./gradlew integrationTest`  | testy integracyjne (klasy `*IT`), PostgreSQL uruchamiany w Testcontainers, Free IP API zastąpione przez [WireMock](https://wiremock.org/) |
-| `./gradlew check`            | testy jednostkowe, integracyjne i sprawdzenie formatowania                                                                                |
+| `./gradlew check`            | testy jednostkowe, integracyjne, sprawdzenie formatowania i progu pokrycia kodu                                                           |
 | `./gradlew jacocoTestReport` | testy jednostkowe i integracyjne + raport pokrycia kodu ([JaCoCo](https://www.jacoco.org/jacoco/))                                        |
 
 Testy są pisane w Groovy ([Spock](https://spockframework.org/)).
@@ -150,9 +150,13 @@ Testy integracyjne dziedziczą po `IntegrationTestSpecification`, która włącz
 Raport pokrycia (łączny dla obu rodzajów testów) trafia do `build/reports/jacoco/test/html/index.html` (wersja XML:
 `build/reports/jacoco/test/jacocoTestReport.xml`).
 
+Minimalne pokrycie linii i gałęzi to 80% — sprawdza je `./gradlew jacocoTestCoverageVerification` (uruchamiane też
+w ramach `./gradlew check`/`build` i w CI); poniżej progu build kończy się błędem.
+
 ## Budowanie
 
-Pełne budowanie: kompilacja, wszystkie testy (również integracyjne — wymaga Dockera) i sprawdzenie formatowania:
+Pełne budowanie: kompilacja, wszystkie testy (również integracyjne — wymaga Dockera), sprawdzenie formatowania i progu
+pokrycia kodu:
 
 ```bash
 ./gradlew build
@@ -196,6 +200,8 @@ do `main`. Kolejne kroki:
 1. sprawdzenie formatowania (`./gradlew spotlessCheck`),
 2. testy jednostkowe (`./gradlew test`),
 3. testy integracyjne (`./gradlew integrationTest`),
-4. budowanie artefaktu (`./gradlew assemble`).
+4. raport pokrycia kodu i sprawdzenie progu 80% (`./gradlew jacocoTestReport jacocoTestCoverageVerification`),
+5. budowanie artefaktu (`./gradlew assemble`).
 
-Jeśli któryś krok się nie powiedzie, raporty z testów są dostępne jako artefakt `test-reports`.
+Raport pokrycia jest zawsze dostępny jako artefakt `coverage-report`. Jeśli któryś krok się nie powiedzie, raporty z
+testów są dostępne jako artefakt `test-reports`.
