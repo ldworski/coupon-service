@@ -203,6 +203,7 @@ class CouponsControllerIT extends IntegrationTestSpecification {
         and:
         result.andExpect(status().is(expectedStatus))
                 .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath('$.timestamp').exists())
 
         where:
         description                    | request                                                                                                                                                                    || expectedStatus
@@ -230,6 +231,7 @@ class CouponsControllerIT extends IntegrationTestSpecification {
                 .andExpect(jsonPath('$.detail').value("Coupon with code WINTER2026 already exists"))
                 .andExpect(jsonPath('$.code').value("WINTER2026"))
                 .andExpect(jsonPath('$.instance').value("/coupons"))
+                .andExpect(jsonPath('$.timestamp').exists())
     }
 
     def "should return internal server error without exposing details when unexpected exception occurs"() {

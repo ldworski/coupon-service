@@ -89,6 +89,7 @@ class CouponRedemptionsControllerIT extends IntegrationTestSpecification {
                 .andExpect(jsonPath('$.detail').value("Request validation failed"))
                 .andExpect(jsonPath('$.errors[*].field').value(everyItem(is(field))))
                 .andExpect(jsonPath('$.errors[*].message').value(hasItem(message)))
+                .andExpect(jsonPath('$.timestamp').exists())
 
         where:
         description                  | code          | requestBody                                                       || field       | message
@@ -153,6 +154,7 @@ class CouponRedemptionsControllerIT extends IntegrationTestSpecification {
                 .andExpect(jsonPath('$.title').value(expectedTitle))
                 .andExpect(jsonPath('$.detail').value(expectedDetail))
                 .andExpect(jsonPath('$.instance').value("/coupons/WINTER2026/redemptions"))
+                .andExpect(jsonPath('$.timestamp').exists())
 
         where:
         description                           | exception                                                                 || expectedStatus | expectedTitle                      | expectedDetail
