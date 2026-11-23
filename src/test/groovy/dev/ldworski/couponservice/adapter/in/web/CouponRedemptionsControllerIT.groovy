@@ -1,5 +1,6 @@
 package dev.ldworski.couponservice.adapter.in.web
 
+import dev.ldworski.couponservice.IntegrationTestSpecification
 import dev.ldworski.couponservice.domain.exception.CountryIdentificationUnavailableException
 import dev.ldworski.couponservice.domain.exception.CouponAlreadyRedeemedException
 import dev.ldworski.couponservice.domain.exception.CouponNotAvailableInLocationException
@@ -18,7 +19,6 @@ import org.springframework.dao.PessimisticLockingFailureException
 import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
 import org.springframework.test.web.servlet.MockMvc
-import dev.ldworski.couponservice.IntegrationTestSpecification
 
 import static org.hamcrest.Matchers.everyItem
 import static org.hamcrest.Matchers.hasItem
@@ -139,7 +139,7 @@ class CouponRedemptionsControllerIT extends IntegrationTestSpecification {
 
     def "should return #expectedStatus when #description"() {
         given:
-        redeemCouponUseCase.redeemCoupon(_) >> { throw exception }
+        redeemCouponUseCase.redeemCoupon(_ as RedeemCouponCommand) >> { throw exception }
 
         when:
         def result = mockMvc.perform(post("/coupons/{code}/redemptions", CODE)
@@ -155,18 +155,18 @@ class CouponRedemptionsControllerIT extends IntegrationTestSpecification {
                 .andExpect(jsonPath('$.instance').value("/coupons/WINTER2026/redemptions"))
 
         where:
-        description                          | exception                                                                 || expectedStatus | expectedTitle                     | expectedDetail
-        "coupon does not exist"              | new CouponNotFoundException(new CouponCode(CODE))                         || 404            | "Coupon not found"                | "Coupon with code WINTER2026 not found"
-        "coupon is not available in location" | new CouponNotAvailableInLocationException(new CouponCode(CODE))          || 422            | "Coupon not available in location" |"Coupon with code WINTER2026 is not available for user's location"
-        "user has already redeemed coupon"   | new CouponAlreadyRedeemedException(CouponId.newCouponId(), USER_ID, null) || 409            | "Coupon already redeemed"         | "Coupon has already been redeemed by this user"
-        "coupon usage limit is reached"      | new CouponUsageLimitReachedException(new CouponCode(CODE))                || 409            | "Coupon usage limit reached"      | "Coupon with code WINTER2026 has reached its usage limit"
-        "coupon lock is not acquired in time" | new PessimisticLockingFailureException("lock timeout")                   || 503            | "Resource temporarily unavailable" | "Resource is temporarily locked, try again later"
-        "location service is unavailable"     | new CountryIdentificationUnavailableException(new RuntimeException()) || 503   | "Location service unavailable"     | "Unable to identify user's location, try again later"
+        description                           | exception                                                                 || expectedStatus | expectedTitle                      | expectedDetail
+        "coupon does not exist"               | new CouponNotFoundException(new CouponCode(CODE))                         || 404            | "Coupon not found"                 | "Coupon with code WINTER2026 not found"
+        "coupon is not available in location" | new CouponNotAvailableInLocationException(new CouponCode(CODE))           || 422            | "Coupon not available in location" | "Coupon with code WINTER2026 is not available for user's location"
+        "user has already redeemed coupon"    | new CouponAlreadyRedeemedException(CouponId.newCouponId(), USER_ID, null) || 409            | "Coupon already redeemed"          | "Coupon has already been redeemed by this user"
+        "coupon usage limit is reached"       | new CouponUsageLimitReachedException(new CouponCode(CODE))                || 409            | "Coupon usage limit reached"       | "Coupon with code WINTER2026 has reached its usage limit"
+        "coupon lock is not acquired in time" | new PessimisticLockingFailureException("lock timeout")                    || 503            | "Resource temporarily unavailable" | "Resource is temporarily locked, try again later"
+        "location service is unavailable"     | new CountryIdentificationUnavailableException(new RuntimeException())     || 503            | "Location service unavailable"     | "Unable to identify user's location, try again later"
     }
 
     def "should return retry after header when #description"() {
         given:
-        redeemCouponUseCase.redeemCoupon(_) >> { throw exception }
+        redeemCouponUseCase.redeemCoupon(_ as RedeemCouponCommand) >> { throw exception }
 
         when:
         def result = mockMvc.perform(post("/coupons/{code}/redemptions", CODE)
@@ -178,14 +178,14 @@ class CouponRedemptionsControllerIT extends IntegrationTestSpecification {
                 .andExpect(header().string(HttpHeaders.RETRY_AFTER, expectedRetryAfter))
 
         where:
-        description                           | exception                                                              || expectedRetryAfter
-        "coupon lock is not acquired in time" | new PessimisticLockingFailureException("lock timeout")                 || "1"
+        description                           | exception                                                             || expectedRetryAfter
+        "coupon lock is not acquired in time" | new PessimisticLockingFailureException("lock timeout")                || "1"
         "location service is unavailable"     | new CountryIdentificationUnavailableException(new RuntimeException()) || "1"
     }
 
     def "should return coupon code in problem details when #description"() {
         given:
-        redeemCouponUseCase.redeemCoupon(_) >> { throw exception }
+        redeemCouponUseCase.redeemCoupon(_ as RedeemCouponCommand) >> { throw exception }
 
         when:
         def result = mockMvc.perform(post("/coupons/{code}/redemptions", CODE)
@@ -204,7 +204,7 @@ class CouponRedemptionsControllerIT extends IntegrationTestSpecification {
 
     def "should return internal server error without exposing details when unexpected exception occurs"() {
         given:
-        redeemCouponUseCase.redeemCoupon(_) >> { throw new IllegalStateException("database password leaked") }
+        redeemCouponUseCase.redeemCoupon(_ as RedeemCouponCommand) >> { throw new IllegalStateException("database password leaked") }
 
         when:
         def result = mockMvc.perform(post("/coupons/{code}/redemptions", CODE)

@@ -7,6 +7,10 @@ spring:
     url: ${DB_URL}
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
+  jackson:
+    datatype:
+      enum:
+        fail-on-numbers-for-enums: true
   jpa:
     open-in-view: false
     hibernate:
