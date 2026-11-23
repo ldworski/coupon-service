@@ -78,9 +78,9 @@ class RestExceptionHandler {
     }
 
     @ExceptionHandler(CouponNotAvailableInLocationException.class)
-    ProblemDetail handleCouponNotAvailableInCountry(CouponNotAvailableInLocationException exception) {
-        var problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, exception.getMessage());
-        problemDetail.setTitle("Coupon not available in country");
+    ProblemDetail handleCouponNotAvailableInLocation(CouponNotAvailableInLocationException exception) {
+        var problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.UNPROCESSABLE_CONTENT, exception.getMessage());
+        problemDetail.setTitle("Coupon not available in location");
         problemDetail.setProperty("code", exception.getCode().value());
         return problemDetail;
     }
@@ -105,7 +105,7 @@ class RestExceptionHandler {
     ResponseEntity<ProblemDetail> handlePessimisticLockingFailure(PessimisticLockingFailureException exception) {
         log.info("Lock not acquired in time: {}", exception.getMessage());
         var problemDetail = ProblemDetail.forStatusAndDetail(
-                HttpStatus.SERVICE_UNAVAILABLE, "Resource is busy, try again later");
+                HttpStatus.SERVICE_UNAVAILABLE, "Resource is temporarily locked, try again later");
         problemDetail.setTitle("Resource temporarily unavailable");
         return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
                 .header(HttpHeaders.RETRY_AFTER, RETRY_AFTER_SECONDS)

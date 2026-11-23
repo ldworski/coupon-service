@@ -116,7 +116,7 @@ class RedeemCouponEndToEndIT extends Specification {
                 .expectBody().jsonPath('$.title').isEqualTo("Coupon not found")
     }
 
-    def "should return forbidden when coupon is not available in user's country"() {
+    def "should return unprocessable content when coupon is not available in user's location"() {
         given:
         registerCoupon("E2EREDEEMCOUNTRY", 10, "DE")
 
@@ -124,8 +124,8 @@ class RedeemCouponEndToEndIT extends Specification {
         def response = redeemCoupon("E2EREDEEMCOUNTRY", UUID.randomUUID())
 
         then:
-        response.expectStatus().isForbidden()
-                .expectBody().jsonPath('$.title').isEqualTo("Coupon not available in country")
+        response.expectStatus().isEqualTo(422)
+                .expectBody().jsonPath('$.title').isEqualTo("Coupon not available in location")
         currentUsage("E2EREDEEMCOUNTRY") == 0
         redemptionCount("E2EREDEEMCOUNTRY") == 0
     }

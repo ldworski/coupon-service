@@ -156,10 +156,10 @@ class CouponRedemptionsControllerIT extends Specification {
         where:
         description                          | exception                                                                 || expectedStatus | expectedTitle                     | expectedDetail
         "coupon does not exist"              | new CouponNotFoundException(new CouponCode(CODE))                         || 404            | "Coupon not found"                | "Coupon with code WINTER2026 not found"
-        "coupon is not available in country" | new CouponNotAvailableInLocationException(new CouponCode(CODE))           || 403            | "Coupon not available in country" | "Coupon with code WINTER2026 is not available for user's location"
+        "coupon is not available in location" | new CouponNotAvailableInLocationException(new CouponCode(CODE))          || 422            | "Coupon not available in location" |"Coupon with code WINTER2026 is not available for user's location"
         "user has already redeemed coupon"   | new CouponAlreadyRedeemedException(CouponId.newCouponId(), USER_ID, null) || 409            | "Coupon already redeemed"         | "Coupon has already been redeemed by this user"
         "coupon usage limit is reached"      | new CouponUsageLimitReachedException(new CouponCode(CODE))                || 409            | "Coupon usage limit reached"      | "Coupon with code WINTER2026 has reached its usage limit"
-        "coupon lock is not acquired in time" | new PessimisticLockingFailureException("lock timeout")                   || 503            | "Resource temporarily unavailable" | "Resource is busy, try again later"
+        "coupon lock is not acquired in time" | new PessimisticLockingFailureException("lock timeout")                   || 503            | "Resource temporarily unavailable" | "Resource is temporarily locked, try again later"
     }
 
     def "should return retry after header when coupon lock is not acquired in time"() {

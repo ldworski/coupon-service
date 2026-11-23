@@ -31,13 +31,6 @@ interface CouponRedemptionsApi {
                             mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
                             schema = @Schema(implementation = ProblemDetail.class)))
     @ApiResponse(
-            responseCode = "403",
-            description = "Coupon is not available in the country determined from the user's IP address",
-            content =
-                    @Content(
-                            mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
-                            schema = @Schema(implementation = ProblemDetail.class)))
-    @ApiResponse(
             responseCode = "404",
             description = "Coupon with the given code does not exist",
             content =
@@ -52,8 +45,23 @@ interface CouponRedemptionsApi {
                             mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
                             schema = @Schema(implementation = ProblemDetail.class)))
     @ApiResponse(
+            responseCode = "422",
+            description = "Coupon is not available in the location determined from the user's IP address",
+            content =
+                    @Content(
+                            mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
+                            schema = @Schema(implementation = ProblemDetail.class)))
+    @ApiResponse(
             responseCode = "500",
             description = "Unexpected server error",
+            content =
+                    @Content(
+                            mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
+                            schema = @Schema(implementation = ProblemDetail.class)))
+    @ApiResponse(
+            responseCode = "503",
+            description =
+                    "Coupon is temporarily unavailable due to a high number of concurrent redemptions; retry after the number of seconds given in the Retry-After header",
             content =
                     @Content(
                             mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
