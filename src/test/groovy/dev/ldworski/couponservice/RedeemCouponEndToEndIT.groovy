@@ -197,6 +197,36 @@ class RedeemCouponEndToEndIT extends IntegrationTestSpecification {
         executor.shutdownNow()
     }
 
+    def "should redeem coupon only once when the same user redeems concurrently"() {
+        given:
+        registerCoupon("E2EREDEEMSAMEUSER", 10)
+        def userId = UUID.randomUUID()
+        def executor = Executors.newFixedThreadPool(10)
+        def ready = new CountDownLatch(10)
+        def start = new CountDownLatch(1)
+
+        when:
+        def statuses = (1..10).collect {
+            executor.submit({
+                ready.countDown()
+                start.await()
+                redeemCoupon("E2EREDEEMSAMEUSER", userId).returnResult().status.value()
+            } as Callable<Integer>)
+        }
+        ready.await()
+        start.countDown()
+        def results = statuses.collect { future -> future.get(30, TimeUnit.SECONDS) }
+
+        then:
+        results.count { it == 201 } == 1
+        results.count { it == 409 } == 9
+        currentUsage("E2EREDEEMSAMEUSER") == 1
+        redemptionCount("E2EREDEEMSAMEUSER") == 1
+
+        cleanup:
+        executor.shutdownNow()
+    }
+
     def "should return service unavailable when coupon lock is not acquired within lock timeout"() {
         given:
         registerCoupon("E2ELOCKTIMEOUT", 10)
