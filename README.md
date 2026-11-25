@@ -90,7 +90,7 @@ Cache jest lokalny dla każdej instancji aplikacji (Caffeine).
 
 | Klucz                                                    | Domyślnie | Opis                                                                                       |
 |----------------------------------------------------------|-----------|--------------------------------------------------------------------------------------------|
-| `spring.jpa.properties.jakarta.persistence.lock.timeout` | `3000`    | maksymalny czas (ms) oczekiwania na blokadę kuponu przy realizacji; po przekroczeniu `503` |
+| `spring.jpa.properties.jakarta.persistence.lock.timeout` | `2000`    | maksymalny czas (ms) oczekiwania na blokadę kuponu przy realizacji; po przekroczeniu `503` |
 
 Dane dostępowe do bazy — patrz [Uruchamianie bez profilu `local`](#uruchamianie-bez-profilu-local).
 

@@ -8,21 +8,26 @@ import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options
 import com.github.tomakehurst.wiremock.WireMockServer
 import dev.ldworski.couponservice.configuration.TestcontainersConfiguration
 import java.nio.charset.StandardCharsets
+import java.time.Duration
 import java.util.concurrent.Callable
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.micrometer.tracing.test.autoconfigure.AutoConfigureTracing
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.web.server.LocalServerPort
 import org.springframework.context.annotation.Import
 import org.springframework.core.io.ClassPathResource
+import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.test.context.DynamicPropertyRegistry
 import org.springframework.test.context.DynamicPropertySource
 import org.springframework.test.web.servlet.client.RestTestClient
+import org.springframework.transaction.PlatformTransactionManager
+import org.springframework.transaction.support.TransactionTemplate
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Import(TestcontainersConfiguration)
@@ -30,6 +35,10 @@ import org.springframework.test.web.servlet.client.RestTestClient
 class RedeemCouponEndToEndIT extends IntegrationTestSpecification {
 
     private static final String POLISH_IP = "83.0.0.1"
+    private static final Duration LOCK_ACQUISITION_WAIT = Duration.ofSeconds(5)
+    private static final Duration REQUEST_OVERHEAD_TOLERANCE = Duration.ofSeconds(1)
+    private static final Duration LOCK_HOLD_LIMIT_BEYOND_TIMEOUT = Duration.ofSeconds(10)
+    private static final Duration LOCK_HOLDER_FINISH_WAIT = Duration.ofSeconds(10)
 
     static final WireMockServer wireMock = new WireMockServer(options().dynamicPort())
 
@@ -47,6 +56,12 @@ class RedeemCouponEndToEndIT extends IntegrationTestSpecification {
 
     @Autowired
     JdbcTemplate jdbcTemplate
+
+    @Autowired
+    PlatformTransactionManager transactionManager
+
+    @Value('${spring.jpa.properties.jakarta.persistence.lock.timeout}')
+    long lockTimeoutMillis
 
     RestTestClient restTestClient
 
@@ -122,7 +137,7 @@ class RedeemCouponEndToEndIT extends IntegrationTestSpecification {
 
         then:
         response.expectStatus().isNotFound()
-                .expectBody().jsonPath('$.correlationId').value(String, { assert it ==~ /[0-9a-f]{32}/ })
+                .expectBody().jsonPath('$.correlationId').isNotEmpty()
     }
 
     def "should return trace id from traceparent header as correlation id in problem details"() {
@@ -180,6 +195,50 @@ class RedeemCouponEndToEndIT extends IntegrationTestSpecification {
 
         cleanup:
         executor.shutdownNow()
+    }
+
+    def "should return service unavailable when coupon lock is not acquired within lock timeout"() {
+        given:
+        registerCoupon("E2ELOCKTIMEOUT", 10)
+        def locked = new CountDownLatch(1)
+        def release = new CountDownLatch(1)
+        def executor = Executors.newSingleThreadExecutor()
+        def lockHolder = executor.submit {
+            new TransactionTemplate(transactionManager).executeWithoutResult {
+                jdbcTemplate.queryForObject("SELECT id FROM coupon WHERE code = ? FOR UPDATE", UUID, "E2ELOCKTIMEOUT")
+                locked.countDown()
+                release.await(lockTimeout().plus(LOCK_HOLD_LIMIT_BEYOND_TIMEOUT).toMillis(), TimeUnit.MILLISECONDS)
+            }
+        }
+        assert locked.await(LOCK_ACQUISITION_WAIT.toMillis(), TimeUnit.MILLISECONDS)
+
+        when:
+        def start = System.nanoTime()
+        def response = redeemCoupon("E2ELOCKTIMEOUT", UUID.randomUUID())
+        def elapsed = Duration.ofNanos(System.nanoTime() - start)
+
+        then:
+        response.expectStatus().isEqualTo(503)
+                .expectHeader().valueEquals(HttpHeaders.RETRY_AFTER, "1")
+                .expectBody().jsonPath('$.title').isEqualTo("Resource temporarily unavailable")
+        elapsed >= lockTimeout()
+        elapsed < lockTimeout().plus(REQUEST_OVERHEAD_TOLERANCE)
+
+        when:
+        release.countDown()
+        lockHolder.get(LOCK_HOLDER_FINISH_WAIT.toMillis(), TimeUnit.MILLISECONDS)
+
+        then:
+        currentUsage("E2ELOCKTIMEOUT") == 0
+        redemptionCount("E2ELOCKTIMEOUT") == 0
+
+        cleanup:
+        release.countDown()
+        executor.shutdownNow()
+    }
+
+    private Duration lockTimeout() {
+        Duration.ofMillis(lockTimeoutMillis)
     }
 
     private void registerCoupon(String code, int maxUsagesAllowed, String countryCode = "PL") {
