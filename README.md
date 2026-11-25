@@ -1,3 +1,6 @@
+Standardowo README.md piszę w po angielsku, dlatego tutaj na początek na potrzeby zadania uzasadnienie decyzji po
+polsku, potem już reszta po angielsku.
+
 # Decyzje architektoniczne
 
 1. Wybrałem architekturę heksagonalną z portami i adapterami, po to aby chronić domenę przed naleciałościami frameworka
