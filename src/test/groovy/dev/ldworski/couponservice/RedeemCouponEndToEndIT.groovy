@@ -250,7 +250,7 @@ class RedeemCouponEndToEndIT extends IntegrationTestSpecification {
         then:
         response.expectStatus().isEqualTo(503)
                 .expectHeader().valueEquals(HttpHeaders.RETRY_AFTER, "1")
-                .expectBody().jsonPath('$.title').isEqualTo("Resource temporarily unavailable")
+                .expectBody().jsonPath('$.title').isEqualTo("Coupon temporarily unavailable")
         elapsed >= lockTimeout()
         elapsed < lockTimeout().plus(REQUEST_OVERHEAD_TOLERANCE)
 

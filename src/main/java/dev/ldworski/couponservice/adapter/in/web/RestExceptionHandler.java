@@ -5,6 +5,7 @@ import dev.ldworski.couponservice.domain.exception.CouponAlreadyRedeemedExceptio
 import dev.ldworski.couponservice.domain.exception.CouponCodeAlreadyExistsException;
 import dev.ldworski.couponservice.domain.exception.CouponNotAvailableInLocationException;
 import dev.ldworski.couponservice.domain.exception.CouponNotFoundException;
+import dev.ldworski.couponservice.domain.exception.CouponTemporarilyLockedException;
 import dev.ldworski.couponservice.domain.exception.CouponUsageLimitReachedException;
 import io.micrometer.tracing.Tracer;
 import java.time.Instant;
@@ -12,7 +13,6 @@ import java.util.List;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.dao.PessimisticLockingFailureException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
@@ -103,13 +103,13 @@ class RestExceptionHandler {
         return problemDetail(HttpStatus.CONFLICT, "Coupon usage limit reached", exception.getMessage());
     }
 
-    @ExceptionHandler(PessimisticLockingFailureException.class)
-    ResponseEntity<ProblemDetail> handlePessimisticLockingFailure(PessimisticLockingFailureException exception) {
-        log.info("Lock not acquired in time: {}", exception.getMessage());
+    @ExceptionHandler(CouponTemporarilyLockedException.class)
+    ResponseEntity<ProblemDetail> handleCouponTemporarilyLocked(CouponTemporarilyLockedException exception) {
+        log.info("Coupon lock not acquired in time: {}", exception.getMessage());
         var problemDetail = problemDetail(
                 HttpStatus.SERVICE_UNAVAILABLE,
-                "Resource temporarily unavailable",
-                "Resource is temporarily locked, try again later");
+                "Coupon temporarily unavailable",
+                "Coupon is temporarily locked, try again later");
         return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
                 .header(HttpHeaders.RETRY_AFTER, RETRY_AFTER_SECONDS)
                 .body(problemDetail);

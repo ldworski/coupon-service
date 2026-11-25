@@ -15,6 +15,7 @@ import dev.ldworski.couponservice.domain.exception.CountryIdentificationUnavaila
 import dev.ldworski.couponservice.domain.exception.CouponAlreadyRedeemedException
 import dev.ldworski.couponservice.domain.exception.CouponNotAvailableInLocationException
 import dev.ldworski.couponservice.domain.exception.CouponNotFoundException
+import dev.ldworski.couponservice.domain.exception.CouponTemporarilyLockedException
 import dev.ldworski.couponservice.domain.exception.CouponUsageLimitReachedException
 import dev.ldworski.couponservice.domain.model.CouponCode
 import dev.ldworski.couponservice.domain.model.CouponId
@@ -26,7 +27,6 @@ import org.spockframework.spring.SpringBean
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.micrometer.tracing.test.autoconfigure.AutoConfigureTracing
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest
-import org.springframework.dao.PessimisticLockingFailureException
 import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
 import org.springframework.test.web.servlet.MockMvc
@@ -163,7 +163,7 @@ class CouponRedemptionsControllerIT extends IntegrationTestSpecification {
         "coupon is not available in location" | new CouponNotAvailableInLocationException(new CouponCode(CODE))           || 422            | "Coupon not available in location" | "Coupon with code WINTER2026 is not available for user's location"
         "user has already redeemed coupon"    | new CouponAlreadyRedeemedException(CouponId.newCouponId(), USER_ID, null) || 409            | "Coupon already redeemed"          | "Coupon has already been redeemed by this user"
         "coupon usage limit is reached"       | new CouponUsageLimitReachedException(new CouponCode(CODE))                || 409            | "Coupon usage limit reached"       | "Coupon with code WINTER2026 has reached its usage limit"
-        "coupon lock is not acquired in time" | new PessimisticLockingFailureException("lock timeout")                    || 503            | "Resource temporarily unavailable" | "Resource is temporarily locked, try again later"
+        "coupon lock is not acquired in time" | new CouponTemporarilyLockedException(new CouponCode(CODE), null)          || 503            | "Coupon temporarily unavailable"   | "Coupon is temporarily locked, try again later"
         "location service is unavailable"     | new CountryIdentificationUnavailableException(new RuntimeException())     || 503            | "Location service unavailable"     | "Unable to identify user's location, try again later"
     }
 
@@ -182,7 +182,7 @@ class CouponRedemptionsControllerIT extends IntegrationTestSpecification {
 
         where:
         description                           | exception                                                             || expectedRetryAfter
-        "coupon lock is not acquired in time" | new PessimisticLockingFailureException("lock timeout")                || "1"
+        "coupon lock is not acquired in time" | new CouponTemporarilyLockedException(new CouponCode(CODE), null)      || "1"
         "location service is unavailable"     | new CountryIdentificationUnavailableException(new RuntimeException()) || "1"
     }
 
