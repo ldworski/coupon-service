@@ -30,20 +30,8 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v5
 
-      - name: Check formatting
-        run: ./gradlew spotlessCheck
-
-      - name: Unit tests
-        run: ./gradlew test
-
-      - name: Integration tests
-        run: ./gradlew integrationTest
-
-      - name: Code coverage
-        run: ./gradlew jacocoTestReport jacocoTestCoverageVerification
-
       - name: Build
-        run: ./gradlew assemble
+        run: ./gradlew build jacocoTestReport --continue
 
       - name: Upload test reports
         if: failure()

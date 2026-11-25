@@ -7,6 +7,8 @@ import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options
 
 import com.github.tomakehurst.wiremock.WireMockServer
 import dev.ldworski.couponservice.configuration.TestcontainersConfiguration
+import dev.ldworski.couponservice.domain.model.CouponCode
+import dev.ldworski.couponservice.domain.port.out.CouponRepositoryPort
 import java.nio.charset.StandardCharsets
 import java.time.Duration
 import java.util.concurrent.Callable
@@ -59,6 +61,9 @@ class RedeemCouponEndToEndIT extends IntegrationTestSpecification {
 
     @Autowired
     PlatformTransactionManager transactionManager
+
+    @Autowired
+    CouponRepositoryPort couponRepositoryPort
 
     @Value('${spring.jpa.properties.jakarta.persistence.lock.timeout}')
     long lockTimeoutMillis
@@ -235,7 +240,7 @@ class RedeemCouponEndToEndIT extends IntegrationTestSpecification {
         def executor = Executors.newSingleThreadExecutor()
         def lockHolder = executor.submit {
             new TransactionTemplate(transactionManager).executeWithoutResult {
-                jdbcTemplate.queryForObject("SELECT id FROM coupon WHERE code = ? FOR UPDATE", UUID, "E2ELOCKTIMEOUT")
+                couponRepositoryPort.findByCodeForUpdate(new CouponCode("E2ELOCKTIMEOUT")).orElseThrow()
                 locked.countDown()
                 release.await(lockTimeout().plus(LOCK_HOLD_LIMIT_BEYOND_TIMEOUT).toMillis(), TimeUnit.MILLISECONDS)
             }

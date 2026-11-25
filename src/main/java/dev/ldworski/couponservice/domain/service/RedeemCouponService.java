@@ -4,6 +4,8 @@ import dev.ldworski.couponservice.domain.exception.CouponAlreadyRedeemedExceptio
 import dev.ldworski.couponservice.domain.exception.CouponNotAvailableInLocationException;
 import dev.ldworski.couponservice.domain.exception.CouponNotFoundException;
 import dev.ldworski.couponservice.domain.model.Coupon;
+import dev.ldworski.couponservice.domain.model.CouponCode;
+import dev.ldworski.couponservice.domain.model.CouponId;
 import dev.ldworski.couponservice.domain.model.CouponRedemption;
 import dev.ldworski.couponservice.domain.model.IpAddress;
 import dev.ldworski.couponservice.domain.model.UserId;
@@ -41,7 +43,7 @@ public class RedeemCouponService implements RedeemCouponUseCase {
                 .findByCode(command.code())
                 .orElseThrow(() -> new CouponNotFoundException(command.code()));
         verifyRedemptionPossibility(coupon, command.userId(), command.ipAddress());
-        tryToRedeemCoupon(command);
+        tryToRedeemCoupon(coupon.id(), coupon.code(), command.userId());
     }
 
     private void verifyRedemptionPossibility(Coupon coupon, UserId userId, IpAddress ipAddress) {
@@ -55,14 +57,13 @@ public class RedeemCouponService implements RedeemCouponUseCase {
         coupon.validateAvailableIn(countryCode);
     }
 
-    private void tryToRedeemCoupon(RedeemCouponCommand command) {
+    private void tryToRedeemCoupon(CouponId couponId, CouponCode couponCode, UserId userId) {
         transactionPort.inTransaction(() -> {
             var coupon = couponRepositoryPort
-                    .findByCodeForUpdate(command.code())
-                    .orElseThrow(() -> new CouponNotFoundException(command.code()));
+                    .findByCodeForUpdate(couponCode)
+                    .orElseThrow(() -> new CouponNotFoundException(couponCode));
             couponRepositoryPort.updateUsage(coupon.tryToRedeem());
-            couponRedemptionRepositoryPort.registerRedemption(
-                    new CouponRedemption(coupon.id(), command.userId(), clock.instant()));
+            couponRedemptionRepositoryPort.registerRedemption(new CouponRedemption(couponId, userId, clock.instant()));
         });
     }
 }

@@ -10,7 +10,7 @@ COPY gradlew settings.gradle build.gradle gradle.properties ./
 COPY gradle gradle
 RUN ./gradlew --no-daemon dependencies > /dev/null
 
-# tests are not run here (integration tests need Docker) - they run in CI before the image is built
+# tests are not run here (integration tests need Docker) - they run in CI
 COPY src/main src/main
 RUN ./gradlew --no-daemon bootJar \
     && cp build/libs/coupon-service-*.jar application.jar \

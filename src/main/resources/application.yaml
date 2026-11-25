@@ -25,7 +25,9 @@ management:
         enabled: true
       group:
         readiness:
-          include: readinessState,db
+          include:
+            - readinessState
+            - db
   otlp:
     metrics:
       export:
