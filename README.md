@@ -1,3 +1,60 @@
+# Decyzje architektoniczne
+
+1. Wybrałem architekturę heksagonalną z portami i adapterami, po to aby chronić domenę przed naleciałościami frameworka
+   i infrastruktury. Zysk jest taki, że można łatwo podmieniać wszystkie warstwy komunikujące się z domeną.
+   Kwestia dyskusyjna: postawiłem na całkowity brak adnotacji Spring w domenie - być może zbyt restrykcyjnie - brałem
+   udział w projekcie gdzie świadomie używaliśmy np. adnotacji @Service czy @Transactional. Decyzja na techniczny
+   refinement.
+2. Model domenowy - starałem się iść w kierunku DDD, niemutowalności oraz tego by encja nie była anemiczna.
+3. Postawiłem na spójność dlatego wybrałem relacyjną bazę danych z pesymistycznym lockowaniem wiersza reprezentującego
+   kupon. Jestem świadomy, że dla dużego sklepu i wielkiej wyprzedaży to może być za mało (wiele połączeń do bazy danych
+   może oczekiwać na dostęp do zasobu, więc pula szybko się wyczerpie), jednak by nieco ograniczyć ciężar wynikający z
+   lockowania ustawiłem lock.timeout by oczekiwanie na zajęcie blokady nie było zbyt długie. Dodatkowo przed transakcją
+   z blokadą wykonywane są walidacje. Jest to rozwiązanie na "start" i jeśli by nie wystarczyło to rozważałbym Redis na
+   wejściu do systemu, który trzymałby counter i co jakiś czas dokonywana byłaby rekonsyliacja między stanem bazy
+   relacyjnej (źródło prawdy i gwarant spójności) a Redisem.
+   Ewolucyjnie Redisa można dodać np. jeśli testy wydajności wykażą problemy z obsługą zadanej liczby żądań.
+   Jeśli kupon został już w pełni wykorzystany trafia do cache tak by nie generować więcej ruchu do bazy.
+   Baza relacyjna, wraz ze swoimi CONSTRAINT'ami, jest traktowana jako gwarant poprawności.
+4. Do weryfikacji IP wybrałem Free IP API, które w wersji darmowej oferuje 60 zapytań/minutę. Zapytania są wykonywane
+   poza transakcją bazodanową, po wstępnym sprawdzeniu i walidacji kuponu - ogranicza to ilość zapytań do serwisu
+   zewnętrznego. Dodatkowo na wywołaniu jest @Cacheable - może mieć to sens, ponieważ wiele adresów IP jest
+   współdzielonych przez organizacje, więc szansa na cache hit, może być istotna - można to zweryfikować w metrykach
+   cache (na ten moment /actuator/metrics nie jest wystawiony). W obecnym rozwiązaniu wykorzystuję cache lokalny (każda
+   instancja ma własny cache) - Caffeine.
+5. Kontrolery RESTowe są walidowane; jako obiekt do zwracania komunikatu o błędach wykorzystałem zgodny z RFC 9457
+   ProblemDetail. W organizacji zastosowałbym obowiązującą w niej konwencję. Oprócz prostej informacji o błędzie
+   zwracany jest timestamp i correlationId.
+   Kontrakt został opisany adnotacami OpenAPI i opublikowany na Swagger.
+6. Do modyfikacji bazy danych wykorzystałem standardowe narzędzie jakim jest Flyway.
+7. Zaimplementowałem podstawową obserwowalność, w tym liveness i readiness health checks potrzebne np. w Kubernetes,
+   a także traceId.
+8. Zdecydowałem się na przekazywanie adresu IP jako pola w żądaniu REST, a nie z headerów, bo nie wiem jak serwis byłby
+   umiejscowiony w ekosystemie usług - zakładam, że frontend nie komunikowałby się z nim bezpośrednio. Na serwisie
+   wywołującym spoczywa obowiązek poprawnego ustawienia adresu IP.
+9. CI/CD - przygotowałem prosty pipeline w GitHub Actions pozwalający sprawdzić czy aplikacja się buduje, czy pokrycie
+   testami spełnia wymagania oraz czy formatowanie jest poprawne. Dalsze kroki do wykonania to budowanie obrazu
+   Docker'a, umieszczenie go w repozytorium np. AWS ECR i deployment. Obraz budowany jest wieloetapowo, z zachowaniem
+   zasad bezpieczeństwa i z wykorzystaniem layeringu, który oferuje Spring Boot plugin.
+10. Testy - na różnych poziomach - jednostkowe, integracyjne, E2E. W pierwszej kolejności wykonują się jednostkowe, tak
+    aby dać możliwie szybki feedback. W testach integracyjnych i E2E wykorzystywane jest narzędzie Testcontainers, a
+    także WireMock do symulowania komunikacji z zewnętrzną usługą.
+11. Kody krajów są dla uproszczenia zdefiniowane jako enum, można je dodać jako słownik do bazy w kolejnej iteracji.
+    Myślę, że na MVP to wystarczy, tym bardziej, że dodawanie obsługi nowych krajów zazwyczaj wymaga przygotowań.
+12. Wszystkie @ConfigurationProperties są walidowane, więc brak klucza zatrzymuje start aplikacji.
+
+# Tematy do poruszenia z "biznesem"
+
+1. Brak daty ważności kuponu, może warto dodać do modelu.
+2. Co robimy jeśli klient "zarezerwował" kod ale nie doszło finalnie do sprzedaży - czy kody mają wracać do puli po
+   jakimś czasie?
+3. Jeśli doszło do rezerwacji kodu, ale np. z przyczyn sieciowych pozytywna odpowiedź nie dotarła do odbiorcy to czy
+   nie powinno być jakiegoś idempotency key, który pozwoli zwrócić sukces bez kolejnej alokacji kodu? Idempotency-key to
+   mógłby być np. numer zamówienia albo jakiś UUID generowany podczas checkoutu.
+4. Co jeśli nie można określić kraju pochodzenia adresu IP? Czy definitywnie odrzucamy taką próbę? Za pomocą VPN można
+   zmienić adres IP klienta - może kraj dostawy to lepsza opcja?
+5. Dopytałbym czy unikalność kodu ma być globalna czy per kraj.
+
 # coupon-service
 
 A service for managing discount coupons. Spring Boot, PostgreSQL, built with Gradle.
@@ -88,7 +145,8 @@ Image build (`Dockerfile`):
 - Eclipse Temurin 25 base images pinned to version and digest: JDK on Ubuntu 24.04 for building, JRE on Alpine Linux
   for running (smaller image, fewer system packages),
 - the layer with Gradle and dependencies is rebuilt only when Gradle files change, not on every code change,
-- the JAR is extracted into [Spring Boot layers](https://docs.spring.io/spring-boot/reference/packaging/container-images/efficient-images.html)
+- the JAR is extracted
+  into [Spring Boot layers](https://docs.spring.io/spring-boot/reference/packaging/container-images/efficient-images.html)
   (dependencies separate from application code) — after a code change only the application layer changes (approx.
   100 kB),
 - the application runs as a non-root user (`app`, UID 10001), and its files are owned by root (read-only),
@@ -106,26 +164,26 @@ start.
 The user's country is determined from the IP address using [Free IP API](https://freeipapi.com/). The free plan allows
 approx. 60 requests per minute.
 
-| Key                 | Default                      | Description                                        |
-|---------------------|------------------------------|----------------------------------------------------|
-| `base-url`          | `https://free.freeipapi.com` | API address                                        |
-| `connect-timeout`   | `5s`                         | connection timeout                                 |
-| `read-timeout`      | `5s`                         | response read timeout                              |
-| `retry.max-retries` | `3`                          | number of retries after a 5xx or connection error  |
-| `retry.delay`       | `200ms`                      | delay before the first retry                       |
-| `retry.multiplier`  | `2`                          | delay multiplier for subsequent retries            |
-| `retry.jitter`      | `100ms`                      | random delay deviation                             |
-| `retry.max-delay`   | `2s`                         | maximum delay between retries                      |
+| Key                 | Default                      | Description                                       |
+|---------------------|------------------------------|---------------------------------------------------|
+| `base-url`          | `https://free.freeipapi.com` | API address                                       |
+| `connect-timeout`   | `5s`                         | connection timeout                                |
+| `read-timeout`      | `5s`                         | response read timeout                             |
+| `retry.max-retries` | `3`                          | number of retries after a 5xx or connection error |
+| `retry.delay`       | `200ms`                      | delay before the first retry                      |
+| `retry.multiplier`  | `2`                          | delay multiplier for subsequent retries           |
+| `retry.jitter`      | `100ms`                      | random delay deviation                            |
+| `retry.max-delay`   | `2s`                         | maximum delay between retries                     |
 
 4xx errors (e.g. 429 after exceeding the limit) are not retried. When the API remains unavailable, the coupon
 redemption request ends with a `503` response with a `Retry-After` header.
 
 ### Cache (`coupon-service.cache`)
 
-| Cache               | `maximum-size` | `expire-after-write` | Content                                                          |
-|---------------------|----------------|----------------------|------------------------------------------------------------------|
-| `ip-countries`      | `50000`        | `12h`                | country determined for an IP address — limits Free IP API calls  |
-| `exhausted-coupons` | `10000`        | `30d`                | exhausted coupons — rejected without a database query            |
+| Cache               | `maximum-size` | `expire-after-write` | Content                                                         |
+|---------------------|----------------|----------------------|-----------------------------------------------------------------|
+| `ip-countries`      | `50000`        | `12h`                | country determined for an IP address — limits Free IP API calls |
+| `exhausted-coupons` | `10000`        | `30d`                | exhausted coupons — rejected without a database query           |
 
 The cache is local to each application instance (Caffeine).
 
@@ -188,12 +246,12 @@ related log entries):
 
 ## Tests
 
-| Command                      | Scope                                                                                                                           |
-|------------------------------|---------------------------------------------------------------------------------------------------------------------------------|
-| `./gradlew test`             | unit tests (without `*IT` classes), do not require Docker                                                                       |
+| Command                      | Scope                                                                                                                              |
+|------------------------------|------------------------------------------------------------------------------------------------------------------------------------|
+| `./gradlew test`             | unit tests (without `*IT` classes), do not require Docker                                                                          |
 | `./gradlew integrationTest`  | integration tests (`*IT` classes), PostgreSQL started in Testcontainers, Free IP API replaced by [WireMock](https://wiremock.org/) |
-| `./gradlew check`            | unit tests, integration tests, formatting check and code coverage threshold                                                     |
-| `./gradlew jacocoTestReport` | unit and integration tests + code coverage report ([JaCoCo](https://www.jacoco.org/jacoco/))                                    |
+| `./gradlew check`            | unit tests, integration tests, formatting check and code coverage threshold                                                        |
+| `./gradlew jacocoTestReport` | unit and integration tests + code coverage report ([JaCoCo](https://www.jacoco.org/jacoco/))                                       |
 
 Tests are written in Groovy ([Spock](https://spockframework.org/)).
 
