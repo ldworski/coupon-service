@@ -19,6 +19,13 @@ spring:
       jakarta.persistence.lock.timeout: 2000
 
 management:
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      group:
+        readiness:
+          include: readinessState,db
   otlp:
     metrics:
       export:

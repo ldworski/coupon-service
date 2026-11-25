@@ -51,6 +51,47 @@ DB_URL=jdbc:postgresql://localhost:5432/coupon DB_USERNAME=coupon DB_PASSWORD=co
   java -jar build/libs/coupon-service-0.0.1-SNAPSHOT.jar
 ```
 
+### Docker
+
+Aplikację razem z bazą można uruchomić przez Docker Compose. Serwis `app` ma profil `app`, więc samo
+`docker compose up -d` dalej uruchamia tylko bazę (do pracy z `bootRun`):
+
+```bash
+docker compose --profile app up -d --build    # baza + aplikacja na http://localhost:8080
+docker compose --profile app down             # zatrzymanie (dane bazy zostają w wolumenie)
+```
+
+Kontener aplikacji w Compose działa z systemem plików tylko do odczytu (zapisywalny tylko `/tmp`), bez dodatkowych
+uprawnień jądra (`cap_drop: ALL`) i z blokadą podnoszenia uprawnień (`no-new-privileges`).
+
+Budowanie samego obrazu (testy nie są uruchamiane w trakcie budowania obrazu — uruchamia je CI):
+
+```bash
+docker build -t coupon-service .
+```
+
+Uruchomienie z bazą z `compose.yaml` (uruchomioną na hoście):
+
+```bash
+docker run --rm --network host \
+  -e DB_URL=jdbc:postgresql://localhost:5432/coupon -e DB_USERNAME=coupon -e DB_PASSWORD=coupon \
+  coupon-service
+```
+
+Konfigurację podaje się zmiennymi środowiskowymi (patrz [Konfiguracja](#konfiguracja)). Ustawienia JVM można nadpisać
+zmienną `JAVA_TOOL_OPTIONS` (domyślnie `-XX:MaxRAMPercentage=75.0`, czyli sterta do 75% limitu pamięci kontenera).
+
+Budowa obrazu (`Dockerfile`):
+
+- dwa etapy: budowanie na JDK (Gradle), uruchamianie na samym JRE — narzędzia budowania nie trafiają do obrazu,
+- obrazy bazowe Eclipse Temurin 25 przypięte do wersji i digestu: JDK na Ubuntu 24.04 do budowania, JRE na Alpine Linux
+  do uruchamiania (mniejszy obraz, mniej pakietów systemowych),
+- warstwa z Gradle i zależnościami budowana tylko przy zmianie plików Gradle, nie przy każdej zmianie kodu,
+- JAR rozpakowany na [warstwy Spring Boot](https://docs.spring.io/spring-boot/reference/packaging/container-images/efficient-images.html)
+  (zależności osobno od kodu aplikacji) — po zmianie kodu zmienia się tylko warstwa aplikacji (ok. 100 kB),
+- aplikacja działa jako użytkownik bez uprawnień roota (`app`, UID 10001), a jej pliki należą do roota (tylko do odczytu),
+- `.dockerignore` przepuszcza do kontekstu budowania tylko pliki potrzebne do zbudowania aplikacji.
+
 ## Konfiguracja
 
 Ustawienia aplikacji są w `src/main/resources/application.yaml`. Każdą wartość można nadpisać zmienną środowiskową
@@ -109,6 +150,17 @@ Dane dostępowe do bazy — patrz [Uruchamianie bez profilu `local`](#uruchamian
 
 Wywołania Free IP API nie są śledzone (zewnętrzne API, poza organizacją).
 
+### Health checks
+
+Spring Boot Actuator udostępnia endpointy stanu aplikacji (np. dla probe'ów Kubernetesa):
+
+- liveness: http://localhost:8080/actuator/health/liveness — tylko stan samej aplikacji (awaria bazy nie powoduje
+  restartu),
+- readiness: http://localhost:8080/actuator/health/readiness — stan aplikacji i połączenie z bazą (bez bazy
+  instancja nie przyjmuje ruchu).
+
+Healthcheck serwisu `app` w `compose.yaml` korzysta z endpointu readiness.
+
 ## API
 
 Dokumentacja OpenAPI (przy uruchomionej aplikacji):
@@ -124,7 +176,6 @@ powiązane wpisy w logach):
 
 ```json
 {
-  "type": "about:blank",
   "title": "Coupon not found",
   "status": 404,
   "detail": "Coupon with code WINTER2026 not found",
