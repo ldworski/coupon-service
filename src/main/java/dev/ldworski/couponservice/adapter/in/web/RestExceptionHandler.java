@@ -40,6 +40,8 @@ class RestExceptionHandler {
         this.tracer = tracer;
     }
 
+    // Bean Validation of a @Valid @RequestBody failed (e.g. @NotNull field missing) on endpoints without
+    // constraints directly on method parameters, e.g. POST /coupons
     @ExceptionHandler(MethodArgumentNotValidException.class)
     ProblemDetail handleValidationException(MethodArgumentNotValidException exception) {
         return validationProblemDetail(exception.getBindingResult().getFieldErrors().stream()
@@ -47,6 +49,9 @@ class RestExceptionHandler {
                 .toList());
     }
 
+    // method validation failed: constraints directly on method parameters (e.g. @Size/@Pattern on path variable
+    // code in POST /coupons/{code}/redemptions); errors of the @Valid request body of the same method are reported
+    // here too (as ParameterErrors), so path and body errors come back together
     @ExceptionHandler(HandlerMethodValidationException.class)
     ProblemDetail handleHandlerMethodValidation(HandlerMethodValidationException exception) {
         return validationProblemDetail(exception.getParameterValidationResults().stream()
@@ -59,6 +64,9 @@ class RestExceptionHandler {
                 .toList());
     }
 
+    // request body cannot be deserialized: a value of wrong type or unknown enum constant (e.g. userId not a UUID,
+    // countryCode "XX", maxUsagesAllowed "abc") is reported as a field error; syntactically invalid JSON as
+    // malformed request
     @ExceptionHandler(HttpMessageNotReadableException.class)
     ProblemDetail handleHttpMessageNotReadable(HttpMessageNotReadableException exception) {
         if (exception.getCause() instanceof MismatchedInputException mismatchedInput) {
@@ -136,7 +144,6 @@ class RestExceptionHandler {
     private ProblemDetail problemDetail(HttpStatus status, String title, String detail) {
         var problemDetail = ProblemDetail.forStatusAndDetail(status, detail);
         problemDetail.setTitle(title);
-        // immutability?
         return withMetadata(problemDetail);
     }
 
