@@ -41,26 +41,26 @@ class CouponRedemptionJpaRepositoryAdapterIT extends IntegrationTestSpecificatio
         def coupon = registeredCoupon("WINTER2026")
 
         when:
-        adapter.registerRedemption(new CouponRedemption(coupon.id, USER_ID, REDEMPTION_DATE))
+        adapter.registerRedemption(new CouponRedemption(coupon.id(), USER_ID, REDEMPTION_DATE))
         entityManager.clear()
 
         then:
-        def stored = couponRedemptionEntityJpaRepository.findById(new CouponRedemptionId(coupon.id.value(), USER_ID.value())).orElseThrow()
+        def stored = couponRedemptionEntityJpaRepository.findById(new CouponRedemptionId(coupon.id().value(), USER_ID.value())).orElseThrow()
         stored.created == REDEMPTION_DATE
     }
 
     def "should reject second redemption of the same coupon by the same user"() {
         given:
         def coupon = registeredCoupon("WINTER2026")
-        adapter.registerRedemption(new CouponRedemption(coupon.id, USER_ID, REDEMPTION_DATE))
+        adapter.registerRedemption(new CouponRedemption(coupon.id(), USER_ID, REDEMPTION_DATE))
         entityManager.clear()
 
         when:
-        adapter.registerRedemption(new CouponRedemption(coupon.id, USER_ID, REDEMPTION_DATE.plusSeconds(60)))
+        adapter.registerRedemption(new CouponRedemption(coupon.id(), USER_ID, REDEMPTION_DATE.plusSeconds(60)))
 
         then:
         def exception = thrown(CouponAlreadyRedeemedException)
-        exception.couponId == coupon.id
+        exception.couponId == coupon.id()
         exception.userId == USER_ID
     }
 
@@ -70,8 +70,8 @@ class CouponRedemptionJpaRepositoryAdapterIT extends IntegrationTestSpecificatio
         def otherUserId = new UserId(UUID.randomUUID())
 
         when:
-        adapter.registerRedemption(new CouponRedemption(coupon.id, USER_ID, REDEMPTION_DATE))
-        adapter.registerRedemption(new CouponRedemption(coupon.id, otherUserId, REDEMPTION_DATE))
+        adapter.registerRedemption(new CouponRedemption(coupon.id(), USER_ID, REDEMPTION_DATE))
+        adapter.registerRedemption(new CouponRedemption(coupon.id(), otherUserId, REDEMPTION_DATE))
 
         then:
         couponRedemptionEntityJpaRepository.count() == 2
@@ -83,11 +83,24 @@ class CouponRedemptionJpaRepositoryAdapterIT extends IntegrationTestSpecificatio
         def summer = registeredCoupon("SUMMER2026")
 
         when:
-        adapter.registerRedemption(new CouponRedemption(winter.id, USER_ID, REDEMPTION_DATE))
-        adapter.registerRedemption(new CouponRedemption(summer.id, USER_ID, REDEMPTION_DATE))
+        adapter.registerRedemption(new CouponRedemption(winter.id(), USER_ID, REDEMPTION_DATE))
+        adapter.registerRedemption(new CouponRedemption(summer.id(), USER_ID, REDEMPTION_DATE))
 
         then:
         couponRedemptionEntityJpaRepository.count() == 2
+    }
+
+    def "should tell whether user has redeemed coupon"() {
+        given:
+        def winter = registeredCoupon("WINTER2026")
+        def summer = registeredCoupon("SUMMER2026")
+        adapter.registerRedemption(new CouponRedemption(winter.id(), USER_ID, REDEMPTION_DATE))
+        entityManager.clear()
+
+        expect:
+        adapter.isRedeemed(winter.id(), USER_ID)
+        !adapter.isRedeemed(winter.id(), new UserId(UUID.randomUUID()))
+        !adapter.isRedeemed(summer.id(), USER_ID)
     }
 
     def "should reject redemption of not existing coupon"() {

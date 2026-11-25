@@ -17,11 +17,11 @@ class CouponSpec extends Specification {
         def coupon = new Coupon(ID, CODE, COUNTRY_CODE, new CouponUsage(5, 100), NOW)
 
         then:
-        coupon.id == ID
-        coupon.code == CODE
-        coupon.countryCode == COUNTRY_CODE
-        coupon.usage == new CouponUsage(5, 100)
-        coupon.creationDate == NOW
+        coupon.id() == ID
+        coupon.code() == CODE
+        coupon.countryCode() == COUNTRY_CODE
+        coupon.usage() == new CouponUsage(5, 100)
+        coupon.creationDate() == NOW
     }
 
     def "should return coupon with incremented usages when redeemed"() {
@@ -32,12 +32,12 @@ class CouponSpec extends Specification {
         def redeemed = coupon.tryToRedeem()
 
         then:
-        redeemed.usage == new CouponUsage(100, 100)
-        redeemed.id == ID
-        redeemed.code == CODE
-        redeemed.countryCode == COUNTRY_CODE
-        redeemed.creationDate == NOW
-        coupon.usage == new CouponUsage(99, 100)
+        redeemed.usage() == new CouponUsage(100, 100)
+        redeemed.id() == ID
+        redeemed.code() == CODE
+        redeemed.countryCode() == COUNTRY_CODE
+        redeemed.creationDate() == NOW
+        coupon.usage() == new CouponUsage(99, 100)
     }
 
     def "should not redeem coupon when usage limit is reached"() {
@@ -118,11 +118,11 @@ class CouponSpec extends Specification {
         def coupon = Coupon.newCoupon(CODE, COUNTRY_CODE, 100, NOW)
 
         then:
-        coupon.id != null
-        coupon.code == CODE
-        coupon.countryCode == COUNTRY_CODE
-        coupon.usage == new CouponUsage(0, 100)
-        coupon.creationDate == NOW
+        coupon.id() != null
+        coupon.code() == CODE
+        coupon.countryCode() == COUNTRY_CODE
+        coupon.usage() == new CouponUsage(0, 100)
+        coupon.creationDate() == NOW
     }
 
     def "should generate different ids for new coupons"() {
@@ -131,7 +131,7 @@ class CouponSpec extends Specification {
         def second = Coupon.newCoupon(CODE, COUNTRY_CODE, 100, NOW)
 
         then:
-        first.id != second.id
+        first.id() != second.id()
     }
 
     def "should reject invalid max allowed usage when creating new coupon"() {

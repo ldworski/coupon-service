@@ -16,7 +16,7 @@ spring:
     hibernate:
       ddl-auto: validate
     properties:
-      jakarta.persistence.lock.timeout: 3000
+      jakarta.persistence.lock.timeout: 2000
 
 management:
   otlp:

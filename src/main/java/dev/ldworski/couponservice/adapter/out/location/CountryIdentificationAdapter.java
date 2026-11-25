@@ -26,7 +26,7 @@ public class CountryIdentificationAdapter implements CountryIdentificationPort {
     }
 
     @Override
-    @Cacheable(IP_COUNTRIES_CACHE)
+    @Cacheable(value = IP_COUNTRIES_CACHE, sync = true)
     public Optional<CountryCode> identifyCountry(IpAddress ipAddress) {
         var response = withRetries(() -> freeIpApiRestClient
                 .get()

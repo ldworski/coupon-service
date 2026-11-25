@@ -1,8 +1,12 @@
 package dev.ldworski.couponservice.domain.service;
 
+import dev.ldworski.couponservice.domain.exception.CouponAlreadyRedeemedException;
 import dev.ldworski.couponservice.domain.exception.CouponNotAvailableInLocationException;
 import dev.ldworski.couponservice.domain.exception.CouponNotFoundException;
+import dev.ldworski.couponservice.domain.model.Coupon;
 import dev.ldworski.couponservice.domain.model.CouponRedemption;
+import dev.ldworski.couponservice.domain.model.IpAddress;
+import dev.ldworski.couponservice.domain.model.UserId;
 import dev.ldworski.couponservice.domain.port.in.RedeemCouponUseCase;
 import dev.ldworski.couponservice.domain.port.out.CountryIdentificationPort;
 import dev.ldworski.couponservice.domain.port.out.CouponRedemptionRepositoryPort;
@@ -36,22 +40,29 @@ public class RedeemCouponService implements RedeemCouponUseCase {
         var coupon = couponRepositoryPort
                 .findByCode(command.code())
                 .orElseThrow(() -> new CouponNotFoundException(command.code()));
+        verifyRedemptionPossibility(coupon, command.userId(), command.ipAddress());
+        tryToRedeemCoupon(command);
+    }
+
+    private void verifyRedemptionPossibility(Coupon coupon, UserId userId, IpAddress ipAddress) {
+        if (couponRedemptionRepositoryPort.isRedeemed(coupon.id(), userId)) {
+            throw new CouponAlreadyRedeemedException(coupon.id(), userId);
+        }
         coupon.validateUsageLimitNotReached();
         var countryCode = countryIdentificationPort
-                .identifyCountry(command.ipAddress())
-                .orElseThrow(() -> new CouponNotAvailableInLocationException(command.code()));
+                .identifyCountry(ipAddress)
+                .orElseThrow(() -> new CouponNotAvailableInLocationException(coupon.code()));
         coupon.validateAvailableIn(countryCode);
-        tryToRedeemCoupon(command);
     }
 
     private void tryToRedeemCoupon(RedeemCouponCommand command) {
         transactionPort.inTransaction(() -> {
-            var lockedCoupon = couponRepositoryPort
+            var coupon = couponRepositoryPort
                     .findByCodeForUpdate(command.code())
                     .orElseThrow(() -> new CouponNotFoundException(command.code()));
-            couponRepositoryPort.updateUsage(lockedCoupon.tryToRedeem());
+            couponRepositoryPort.updateUsage(coupon.tryToRedeem());
             couponRedemptionRepositoryPort.registerRedemption(
-                    new CouponRedemption(lockedCoupon.getId(), command.userId(), clock.instant()));
+                    new CouponRedemption(coupon.id(), command.userId(), clock.instant()));
         });
     }
 }

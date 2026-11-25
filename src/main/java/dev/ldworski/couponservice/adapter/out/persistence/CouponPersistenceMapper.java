@@ -20,11 +20,11 @@ public class CouponPersistenceMapper {
 
     public CouponEntity from(Coupon coupon) {
         return new CouponEntity(
-                coupon.getId().value(),
-                coupon.getCode().value(),
-                coupon.getUsage().maxAllowed(),
-                coupon.getUsage().current(),
-                coupon.getCountryCode(),
-                coupon.getCreationDate());
+                coupon.id().value(),
+                coupon.code().value(),
+                coupon.usage().maxAllowed(),
+                coupon.usage().current(),
+                coupon.countryCode(),
+                coupon.creationDate());
     }
 }

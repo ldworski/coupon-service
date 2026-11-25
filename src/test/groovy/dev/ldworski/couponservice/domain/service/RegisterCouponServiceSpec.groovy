@@ -35,10 +35,10 @@ class RegisterCouponServiceSpec extends Specification {
         couponId != null
         1 * couponRepositoryPort.registerCoupon(_) >> { Coupon coupon ->
             assert coupon != null
-            assert coupon.code == new CouponCode(CODE)
-            assert coupon.countryCode == COUNTRY_CODE
-            assert coupon.usage == new CouponUsage(0, MAX_ALLOWED_USAGE)
-            assert coupon.creationDate == NOW
+            assert coupon.code() == new CouponCode(CODE)
+            assert coupon.countryCode() == COUNTRY_CODE
+            assert coupon.usage() == new CouponUsage(0, MAX_ALLOWED_USAGE)
+            assert coupon.creationDate() == NOW
             return coupon
         }
     }
@@ -52,7 +52,7 @@ class RegisterCouponServiceSpec extends Specification {
         def id = service.registerCoupon(COMMAND)
 
         then:
-        id == registeredCoupon.id
+        id == registeredCoupon.id()
     }
 
     def "should propagate repository failure"() {

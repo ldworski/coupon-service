@@ -1,7 +1,9 @@
 package dev.ldworski.couponservice.adapter.out.persistence;
 
 import dev.ldworski.couponservice.domain.exception.CouponAlreadyRedeemedException;
+import dev.ldworski.couponservice.domain.model.CouponId;
 import dev.ldworski.couponservice.domain.model.CouponRedemption;
+import dev.ldworski.couponservice.domain.model.UserId;
 import dev.ldworski.couponservice.domain.port.out.CouponRedemptionRepositoryPort;
 import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -18,6 +20,11 @@ public class CouponRedemptionJpaRepositoryAdapter implements CouponRedemptionRep
             CouponRedemptionPersistenceMapper couponRedemptionPersistenceMapper) {
         this.couponRedemptionEntityJpaRepository = couponRedemptionEntityJpaRepository;
         this.couponRedemptionPersistenceMapper = couponRedemptionPersistenceMapper;
+    }
+
+    @Override
+    public boolean isRedeemed(CouponId couponId, UserId userId) {
+        return couponRedemptionEntityJpaRepository.existsById(new CouponRedemptionId(couponId.value(), userId.value()));
     }
 
     @Override

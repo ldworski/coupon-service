@@ -43,7 +43,7 @@ class CouponJpaRepositoryAdapterCacheIT extends IntegrationTestSpecification {
 
         then:
         found.get().usageLimitReached
-        (exhaustedCouponsCache().get(CODE)?.get() as Coupon)?.id == coupon.id
+        (exhaustedCouponsCache().get(CODE)?.get() as Coupon)?.id() == coupon.id()
     }
 
     def "should not cache coupon found by code when its usage limit is not reached"() {

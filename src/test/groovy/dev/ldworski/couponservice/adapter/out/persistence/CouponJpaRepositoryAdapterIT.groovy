@@ -39,12 +39,12 @@ class CouponJpaRepositoryAdapterIT extends IntegrationTestSpecification {
         def registered = adapter.registerCoupon(coupon)
 
         then:
-        registered.id == coupon.id
-        registered.code.value() == CODE
-        registered.usage.maxAllowed() == MAX_ALLOWED_USAGE
-        registered.countryCode == COUNTRY_CODE
-        registered.usage.current() == 0
-        registered.creationDate == CREATION_DATE
+        registered.id() == coupon.id()
+        registered.code().value() == CODE
+        registered.usage().maxAllowed() == MAX_ALLOWED_USAGE
+        registered.countryCode() == COUNTRY_CODE
+        registered.usage().current() == 0
+        registered.creationDate() == CREATION_DATE
     }
 
     def "should persist coupon in database"() {
@@ -57,7 +57,7 @@ class CouponJpaRepositoryAdapterIT extends IntegrationTestSpecification {
         entityManager.clear()
 
         then:
-        def stored = couponEntityJpaRepository.findById(coupon.id.value()).orElseThrow()
+        def stored = couponEntityJpaRepository.findById(coupon.id().value()).orElseThrow()
         stored.code == CODE
         stored.maxAllowedUsage == MAX_ALLOWED_USAGE
         stored.currentUsage == 0
@@ -88,11 +88,11 @@ class CouponJpaRepositoryAdapterIT extends IntegrationTestSpecification {
         then:
         found.isPresent()
         with(found.get()) {
-            id == coupon.id
-            code == coupon.code
-            countryCode == coupon.countryCode
-            usage == coupon.usage
-            creationDate == CREATION_DATE
+            id() == coupon.id()
+            code() == coupon.code()
+            countryCode() == coupon.countryCode()
+            usage() == coupon.usage()
+            creationDate() == CREATION_DATE
         }
     }
 
@@ -118,7 +118,7 @@ class CouponJpaRepositoryAdapterIT extends IntegrationTestSpecification {
         def found = adapter.findByCode(new CouponCode(CODE))
 
         then:
-        found.map { it.id } == Optional.of(coupon.id)
+        found.map { it.id() } == Optional.of(coupon.id())
     }
 
     def "should not find coupon by code when code does not exist"() {
@@ -138,7 +138,7 @@ class CouponJpaRepositoryAdapterIT extends IntegrationTestSpecification {
         def found = adapter.findByCodeForUpdate(new CouponCode(CODE))
 
         then:
-        found.map { it.id } == Optional.of(coupon.id)
+        found.map { it.id() } == Optional.of(coupon.id())
     }
 
     def "should not find coupon for update when code does not exist"() {
@@ -158,7 +158,7 @@ class CouponJpaRepositoryAdapterIT extends IntegrationTestSpecification {
         entityManager.clear()
 
         then:
-        couponEntityJpaRepository.findById(coupon.id.value()).orElseThrow().currentUsage == 1
+        couponEntityJpaRepository.findById(coupon.id().value()).orElseThrow().currentUsage == 1
     }
 
     def "should reject current usage exceeding max allowed usage on database level"() {
@@ -167,7 +167,7 @@ class CouponJpaRepositoryAdapterIT extends IntegrationTestSpecification {
 
         when:
         entityManager.createNativeQuery("UPDATE coupon SET current_usage = max_allowed_usage + 1 WHERE id = :id")
-                .setParameter("id", coupon.id.value())
+                .setParameter("id", coupon.id().value())
                 .executeUpdate()
 
         then:
