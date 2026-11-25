@@ -1,0 +1,42 @@
+package dev.ldworski.couponservice.configuration;
+
+import dev.ldworski.couponservice.domain.port.in.RedeemCouponUseCase;
+import dev.ldworski.couponservice.domain.port.in.RegisterCouponUseCase;
+import dev.ldworski.couponservice.domain.port.out.CountryIdentificationPort;
+import dev.ldworski.couponservice.domain.port.out.CouponRedemptionRepositoryPort;
+import dev.ldworski.couponservice.domain.port.out.CouponRepositoryPort;
+import dev.ldworski.couponservice.domain.port.out.TransactionPort;
+import dev.ldworski.couponservice.domain.service.RedeemCouponService;
+import dev.ldworski.couponservice.domain.service.RegisterCouponService;
+import java.time.Clock;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+@Configuration
+public class DomainConfiguration {
+
+    @Bean
+    Clock clock() {
+        return Clock.systemUTC();
+    }
+
+    @Bean
+    RegisterCouponUseCase registerCouponUseCase(CouponRepositoryPort couponRepositoryPort, Clock clock) {
+        return new RegisterCouponService(couponRepositoryPort, clock);
+    }
+
+    @Bean
+    RedeemCouponUseCase redeemCouponUseCase(
+            CountryIdentificationPort countryIdentificationPort,
+            CouponRepositoryPort couponRepositoryPort,
+            CouponRedemptionRepositoryPort couponRedemptionRepositoryPort,
+            TransactionPort transactionPort,
+            Clock clock) {
+        return new RedeemCouponService(
+                countryIdentificationPort,
+                couponRepositoryPort,
+                couponRedemptionRepositoryPort,
+                transactionPort,
+                clock);
+    }
+}

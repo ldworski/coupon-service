@@ -1,0 +1,9 @@
+# allowlist: only what the build needs goes into the build context
+# (keeps the context small and prevents local files such as .env or IDE settings from leaking into the image)
+*
+!gradlew
+!gradle/
+!build.gradle
+!settings.gradle
+!gradle.properties
+!src/main/

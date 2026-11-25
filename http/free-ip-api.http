@@ -1,0 +1,17 @@
+@freeIpApiUrl = https://free.freeipapi.com/api/v1/json
+
+### Identify country for IPv4 address (PL)
+GET {{freeIpApiUrl}}/83.0.0.1
+Accept: application/json
+
+### Identify country for IPv6 address (DE)
+GET {{freeIpApiUrl}}/2a02:8108::1
+Accept: application/json
+
+### Identify country for not supported country (US)
+GET {{freeIpApiUrl}}/8.8.8.8
+Accept: application/json
+
+### Private IP address - HTTP 200 with countryCode null
+GET {{freeIpApiUrl}}/10.0.0.1
+Accept: application/json

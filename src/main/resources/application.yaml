@@ -1,3 +1,54 @@
 spring:
   application:
     name: coupon-service
+  main:
+    banner-mode: off
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+  jackson:
+    datatype:
+      enum:
+        fail-on-numbers-for-enums: true
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      jakarta.persistence.lock.timeout: 2000
+
+management:
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      group:
+        readiness:
+          include:
+            - readinessState
+            - db
+  otlp:
+    metrics:
+      export:
+        enabled: false
+
+coupon-service:
+  cache:
+    ip-countries:
+      maximum-size: 50000
+      expire-after-write: 12h
+    exhausted-coupons:
+      maximum-size: 10000
+      expire-after-write: 30d
+  free-ip-api:
+    base-url: https://free.freeipapi.com
+    connect-timeout: 5s
+    read-timeout: 5s
+    retry:
+      max-retries: 3
+      delay: 200ms
+      multiplier: 2
+      jitter: 100ms
+      max-delay: 2s
+

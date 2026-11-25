@@ -1,0 +1,142 @@
+plugins {
+    id 'java'
+    id 'groovy'
+    id 'jacoco'
+    id 'org.springframework.boot'
+    id 'io.spring.dependency-management'
+    id 'com.diffplug.spotless'
+}
+
+group = 'dev.ldworski'
+version = '0.0.1-SNAPSHOT'
+description = 'coupon-service'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(25)
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation "org.springdoc:springdoc-openapi-starter-webmvc-ui:${springdocVersion}"
+    implementation 'org.springframework.boot:spring-boot-starter'
+    implementation 'org.springframework.boot:spring-boot-starter-webmvc'
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    implementation 'org.springframework.boot:spring-boot-starter-flyway'
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.springframework.boot:spring-boot-starter-cache'
+    implementation 'org.springframework.boot:spring-boot-starter-opentelemetry'
+    implementation 'com.github.ben-manes.caffeine:caffeine'
+    implementation 'org.flywaydb:flyway-database-postgresql'
+    implementation "commons-validator:commons-validator:${commonsValidatorVersion}"
+    runtimeOnly 'org.postgresql:postgresql'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.springframework.boot:spring-boot-starter-data-jpa-test'
+    testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
+    testImplementation 'org.springframework.boot:spring-boot-starter-opentelemetry-test'
+    testImplementation 'org.springframework.boot:spring-boot-testcontainers'
+    testImplementation 'org.testcontainers:testcontainers-postgresql'
+    testImplementation "org.wiremock:wiremock-standalone:${wiremockVersion}"
+    testImplementation "org.spockframework:spock-core:${spockVersion}"
+    testImplementation "org.spockframework:spock-spring:${spockVersion}"
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+tasks.withType(Test).configureEach {
+    useJUnitPlatform()
+
+    testLogging {
+        events 'passed', 'skipped', 'failed', 'standard_out', 'standard_error'
+        showStandardStreams = true
+        exceptionFormat = 'full'
+        showExceptions = true
+        showCauses = true
+        showStackTraces = true
+    }
+}
+
+tasks.named('test', Test) {
+    filter {
+        excludeTestsMatching '*IT'
+    }
+}
+
+def integrationTest = tasks.register('integrationTest', Test) {
+    description = 'Runs integration tests (classes ending with IT).'
+    group = LifecycleBasePlugin.VERIFICATION_GROUP
+    testClassesDirs = sourceSets.test.output.classesDirs
+    classpath = sourceSets.test.runtimeClasspath
+    filter {
+        includeTestsMatching '*IT'
+    }
+    shouldRunAfter tasks.named('test')
+}
+
+tasks.named('check') {
+    dependsOn integrationTest
+}
+
+jacoco {
+    toolVersion = jacocoVersion
+}
+
+tasks.named('jacocoTestReport', JacocoReport) {
+    description = 'Generates code coverage report from unit and integration tests.'
+    dependsOn tasks.named('test'), integrationTest
+    executionData.setFrom(fileTree(layout.buildDirectory).include('jacoco/*.exec'))
+    reports {
+        html.required = true
+        xml.required = true
+    }
+}
+
+tasks.named('jacocoTestCoverageVerification', JacocoCoverageVerification) {
+    description = 'Fails the build when code coverage from unit and integration tests is below the threshold.'
+    dependsOn tasks.named('test'), integrationTest
+    executionData.setFrom(fileTree(layout.buildDirectory).include('jacoco/*.exec'))
+    violationRules {
+        rule {
+            limit {
+                counter = 'LINE'
+                minimum = 0.80
+            }
+            limit {
+                counter = 'BRANCH'
+                minimum = 0.80
+            }
+        }
+    }
+}
+
+tasks.named('check') {
+    dependsOn tasks.named('jacocoTestCoverageVerification')
+}
+
+spotless {
+    java {
+        target 'src/*/java/**/*.java'
+        palantirJavaFormat(palantirJavaFormatVersion)
+        removeUnusedImports()
+        trimTrailingWhitespace()
+        endWithNewline()
+    }
+    // Spock tests: only steps that keep the layout (greclipse breaks alignment of where: tables)
+    groovy {
+        target 'src/test/groovy/**/*.groovy'
+        importOrder()
+        removeSemicolons()
+        trimTrailingWhitespace()
+        leadingTabsToSpaces(4)
+        endWithNewline()
+    }
+    groovyGradle {
+        target '*.gradle'
+        greclipse()
+        leadingTabsToSpaces(4)
+    }
+}

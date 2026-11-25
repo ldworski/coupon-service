@@ -1,0 +1,18 @@
+### Register coupon
+POST {{baseUrl}}/coupons
+Content-Type: application/json
+
+{
+  "code": "WINTER2026",
+  "maxUsagesAllowed": 100,
+  "countryCode": "PL"
+}
+
+### Redeem coupon
+POST {{baseUrl}}/coupons/WINTER2026/redemptions
+Content-Type: application/json
+
+{
+  "userId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+  "ipAddress": "83.0.0.1"
+}
